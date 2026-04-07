@@ -32,6 +32,7 @@ body { overflow: hidden; }
   display: block;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+  touch-action: none;
 }
 
 .screen {
@@ -75,7 +76,7 @@ h1, h2 { margin: 0 0 16px 0; font-weight: 700; }
 .death-quote { margin: 8px 0 16px; color: var(--muted); font-style: italic; }
 
 .touch { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
-.touch-zone { position: absolute; top: 0; bottom: 0; width: 50%; pointer-events: auto; }
+.touch-zone { position: absolute; top: 0; bottom: 0; width: 50%; pointer-events: auto; touch-action: none; }
 #touchLeft { left: 0; }
 #touchRight { right: 0; }
 .joystick { position: absolute; width: 120px; height: 120px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); pointer-events: none; }

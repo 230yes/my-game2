@@ -783,6 +783,7 @@
     });
 
     touchLeft.addEventListener('pointerdown', (e) => {
+      try { touchLeft.setPointerCapture(e.pointerId); } catch {}
       inputs.touchMove.active = true;
       inputs.touchMove.id = e.pointerId;
       inputs.touchMove.startX = e.clientX;
@@ -818,14 +819,19 @@
       inputs.touchMove.dx = 0;
       inputs.touchMove.dy = 0;
       joystick.classList.add('hidden');
+      try { touchLeft.releasePointerCapture(e.pointerId); } catch {}
     };
 
     touchLeft.addEventListener('pointerup', endTouchMove);
     touchLeft.addEventListener('pointercancel', endTouchMove);
 
     touchRight.addEventListener('pointerdown', (e) => {
+      try { touchRight.setPointerCapture(e.pointerId); } catch {}
       inputs.touchShoot.active = true;
       inputs.touchShoot.id = e.pointerId;
+      const pos = screenToWorld(e.clientX, e.clientY);
+      inputs.mouseX = clamp(pos.x, 0, worldWidth);
+      inputs.mouseY = clamp(pos.y, 0, worldHeight);
       inputs.shooting = true;
     });
 
@@ -833,6 +839,7 @@
       if (inputs.touchShoot.id !== e.pointerId) return;
       inputs.touchShoot.active = false;
       inputs.shooting = false;
+      try { touchRight.releasePointerCapture(e.pointerId); } catch {}
     };
 
     touchRight.addEventListener('pointerup', endShoot);
@@ -882,7 +889,9 @@
   }
 
   function setupTouch() {
-    const isTouch = window.matchMedia('(pointer: coarse)').matches;
+    const isTouch = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0)
+      || ('ontouchstart' in window)
+      || window.matchMedia('(pointer: coarse)').matches;
     if (isTouch) {
       touchLayer.classList.remove('hidden');
     }
