@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Стрелок Арены</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="game"></canvas>
+
+    <div id="hud" class="hud hidden">
+      <div class="hud-left">
+        <div class="hud-item"><span>Здоровье</span><strong id="hudHealth">100</strong></div>
+        <div class="hud-item"><span>Волна</span><strong id="hudWave">1</strong></div>
+        <div class="hud-item"><span>Монеты</span><strong id="hudCoins">0</strong></div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-item"><span>Патроны</span><strong id="hudAmmo">0/0</strong></div>
+        <div class="hud-item"><span>Время</span><strong id="hudTime">00:00</strong></div>
+        <div class="hud-item"><span>Убийств</span><strong id="hudKills">0</strong></div>
+      </div>
+    </div>
+
+    <div id="menu" class="screen">
+      <div class="panel">
+        <h1>Стрелок Арены</h1>
+        <div class="record">Рекорд: <span id="menuRecord">00:00</span></div>
+        <button id="btnStart" class="btn primary">Начать игру</button>
+        <button id="btnHow" class="btn">Как играть</button>
+      </div>
+    </div>
+
+    <div id="howto" class="screen hidden">
+      <div class="panel">
+        <h2>Как играть</h2>
+        <ul class="list">
+          <li>Движение: WASD или стрелки, на телефоне — перетаскивай палец.</li>
+          <li>Стрельба: клик мышью, на телефоне — тап по правой стороне. Перезарядка: R.</li>
+          <li>Волны бесконечны. После каждой волны — магазин.</li>
+          <li>Таймер времени не останавливается.</li>
+          <li>Игра заканчивается только при смерти.</li>
+        </ul>
+        <button id="btnBack" class="btn">Назад</button>
+      </div>
+    </div>
+
+    <div id="shop" class="screen hidden">
+      <div class="panel wide">
+        <h2>Магазин</h2>
+        <div id="shopItems" class="shop-items"></div>
+        <button id="btnShopContinue" class="btn primary">Продолжить</button>
+      </div>
+    </div>
+
+    <div id="death" class="screen hidden">
+      <div class="panel">
+        <h2>Вы умерли</h2>
+        <div class="death-stats">
+          <div>Время: <strong id="deathTime">00:00</strong></div>
+          <div>Волн пройдено: <strong id="deathWaves">0</strong></div>
+          <div>Врагов убито: <strong id="deathKills">0</strong></div>
+          <div>Монет собрано: <strong id="deathCoins">0</strong></div>
+          <div>Лучшее улучшение: <strong id="deathUpgrade">—</strong></div>
+          <div>Рекорд: <strong id="deathRecord">00:00</strong></div>
+        </div>
+        <div class="death-quote" id="deathQuote"></div>
+        <button id="btnRestart" class="btn primary">Новая игра</button>
+        <button id="btnMenu" class="btn">В меню</button>
+      </div>
+    </div>
+
+    <div id="touch" class="touch hidden">
+      <div id="touchLeft" class="touch-zone"></div>
+      <div id="touchRight" class="touch-zone"></div>
+      <div id="joystick" class="joystick hidden">
+        <div id="joystickThumb" class="joystick-thumb"></div>
+      </div>
+      <div id="shootHint" class="shoot-hint">Тап для выстрела</div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
