@@ -9,6 +9,20 @@
 <body>
   <div id="app">
     <canvas id="game"></canvas>
+    <div id="damageFlash" class="damage-flash"></div>
+    <div id="waveBanner" class="wave-banner hidden"></div>
+    <div id="bossHud" class="boss-hud hidden">
+      <div class="boss-name" id="bossName">Босс</div>
+      <div class="boss-track">
+        <div id="bossBar" class="boss-bar"></div>
+      </div>
+    </div>
+    <div id="reloadIndicator" class="reload-indicator hidden">
+      <div class="reload-label" id="reloadText">Перезарядка</div>
+      <div class="reload-track">
+        <div id="reloadBar" class="reload-bar"></div>
+      </div>
+    </div>
 
     <div id="hud" class="hud hidden">
       <div class="hud-left">
@@ -27,6 +41,44 @@
       <div class="panel">
         <h1>Стрелок Арены</h1>
         <div class="record">Рекорд: <span id="menuRecord">00:00</span></div>
+        <div class="choice-group">
+          <div class="choice-title">Локация</div>
+          <div id="arenaChoices" class="choice-grid">
+            <button class="choice-card active" data-arena="crypt">
+              <strong>Крипта</strong>
+              <span>Монеты тянутся дальше</span>
+            </button>
+            <button class="choice-card" data-arena="forge">
+              <strong>Кузня</strong>
+              <span>Быстрее стрельба</span>
+            </button>
+            <button class="choice-card" data-arena="citadel">
+              <strong>Цитадель</strong>
+              <span>Больше здоровья</span>
+            </button>
+          </div>
+        </div>
+        <div class="choice-group">
+          <div class="choice-title">Оружие</div>
+          <div id="weaponChoices" class="choice-grid weapon-grid">
+            <button class="choice-card active" data-weapon="carbine">
+              <strong>Карабин</strong>
+              <span>Ровный универсал</span>
+            </button>
+            <button class="choice-card" data-weapon="scatter">
+              <strong>Дробовик</strong>
+              <span>Ближний разрывной бой</span>
+            </button>
+            <button class="choice-card" data-weapon="lancer">
+              <strong>Ланцер</strong>
+              <span>Медленный мощный выстрел</span>
+            </button>
+            <button class="choice-card" data-weapon="storm">
+              <strong>Штормер</strong>
+              <span>Быстрые двойные заряды</span>
+            </button>
+          </div>
+        </div>
         <button id="btnStart" class="btn primary">Начать игру</button>
         <button id="btnHow" class="btn">Как играть</button>
       </div>
