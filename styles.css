@@ -75,7 +75,7 @@ h1, h2 { margin: 0 0 16px 0; font-weight: 700; }
 .death-stats { display: grid; gap: 8px; text-align: left; margin-bottom: 12px; }
 .death-quote { margin: 8px 0 16px; color: var(--muted); font-style: italic; }
 
-.touch { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.touch { position: absolute; inset: 0; z-index: 4; pointer-events: auto; }
 .touch-zone { position: absolute; top: 0; bottom: 0; width: 50%; pointer-events: auto; touch-action: none; }
 #touchLeft { left: 0; }
 #touchRight { right: 0; }
