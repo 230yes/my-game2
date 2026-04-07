@@ -782,86 +782,11 @@
       inputs.shooting = false;
     });
 
-    touchLeft.addEventListener('pointerdown', (e) => {
-      if (e.cancelable) e.preventDefault();
-      try { touchLeft.setPointerCapture(e.pointerId); } catch {}
-      inputs.touchMove.active = true;
-      inputs.touchMove.id = e.pointerId;
-      inputs.touchMove.startX = e.clientX;
-      inputs.touchMove.startY = e.clientY;
-      inputs.touchMove.dx = 0;
-      inputs.touchMove.dy = 0;
-
-      joystick.classList.remove('hidden');
-      joystick.style.left = `${e.clientX - 60}px`;
-      joystick.style.top = `${e.clientY - 60}px`;
-      joystickThumb.style.left = '35px';
-      joystickThumb.style.top = '35px';
-    });
-
-    touchLeft.addEventListener('pointermove', (e) => {
-      if (e.cancelable) e.preventDefault();
-      if (!inputs.touchMove.active || e.pointerId !== inputs.touchMove.id) return;
-      const dx = e.clientX - inputs.touchMove.startX;
-      const dy = e.clientY - inputs.touchMove.startY;
-      const max = 40;
-      const len = Math.hypot(dx, dy);
-      const norm = len > max ? max / len : 1;
-      const clampedX = dx * norm;
-      const clampedY = dy * norm;
-      inputs.touchMove.dx = clampedX / max;
-      inputs.touchMove.dy = clampedY / max;
-      joystickThumb.style.left = `${35 + clampedX}px`;
-      joystickThumb.style.top = `${35 + clampedY}px`;
-    });
-
-    const endTouchMove = (e) => {
-      if (e && e.cancelable) e.preventDefault();
-      if (!inputs.touchMove.active || e.pointerId !== inputs.touchMove.id) return;
-      inputs.touchMove.active = false;
-      inputs.touchMove.dx = 0;
-      inputs.touchMove.dy = 0;
-      joystick.classList.add('hidden');
-      try { touchLeft.releasePointerCapture(e.pointerId); } catch {}
-    };
-
-    touchLeft.addEventListener('pointerup', endTouchMove);
-    touchLeft.addEventListener('pointercancel', endTouchMove);
-
-    touchRight.addEventListener('pointerdown', (e) => {
-      if (e.cancelable) e.preventDefault();
-      try { touchRight.setPointerCapture(e.pointerId); } catch {}
-      inputs.touchShoot.active = true;
-      inputs.touchShoot.id = e.pointerId;
-      const pos = screenToWorld(e.clientX, e.clientY);
-      inputs.mouseX = clamp(pos.x, 0, worldWidth);
-      inputs.mouseY = clamp(pos.y, 0, worldHeight);
-      inputs.shooting = true;
-    });
-
-    const endShoot = (e) => {
-      if (e && e.cancelable) e.preventDefault();
-      if (inputs.touchShoot.id !== e.pointerId) return;
-      inputs.touchShoot.active = false;
-      inputs.shooting = false;
-      try { touchRight.releasePointerCapture(e.pointerId); } catch {}
-    };
-
-    touchRight.addEventListener('pointerup', endShoot);
-    touchRight.addEventListener('pointercancel', endShoot);
-
-    touchRight.addEventListener('pointermove', (e) => {
-      if (e.cancelable) e.preventDefault();
-      const pos = screenToWorld(e.clientX, e.clientY);
-      inputs.mouseX = clamp(pos.x, 0, worldWidth);
-      inputs.mouseY = clamp(pos.y, 0, worldHeight);
-    });
-
-    // Fallback for browsers where Pointer Events are flaky (notably some iOS Safari builds).
+    // ТОЛЬКО TOUCH СОБЫТИЯ (без pointer)
     const touchOpts = { passive: false };
 
     const onLeftTouchStart = (e) => {
-      if (e.cancelable) e.preventDefault();
+      e.preventDefault();
       const t = e.changedTouches[0];
       if (!t) return;
       inputs.touchMove.active = true;
@@ -878,7 +803,7 @@
     };
 
     const onLeftTouchMove = (e) => {
-      if (e.cancelable) e.preventDefault();
+      e.preventDefault();
       if (!inputs.touchMove.active) return;
       const t = Array.from(e.changedTouches).find((x) => x.identifier === inputs.touchMove.id);
       if (!t) return;
@@ -896,7 +821,7 @@
     };
 
     const onLeftTouchEnd = (e) => {
-      if (e.cancelable) e.preventDefault();
+      e.preventDefault();
       if (!inputs.touchMove.active) return;
       const ended = Array.from(e.changedTouches).some((x) => x.identifier === inputs.touchMove.id);
       if (!ended) return;
@@ -907,7 +832,7 @@
     };
 
     const onRightTouchStart = (e) => {
-      if (e.cancelable) e.preventDefault();
+      e.preventDefault();
       const t = e.changedTouches[0];
       if (!t) return;
       inputs.touchShoot.active = true;
@@ -919,7 +844,7 @@
     };
 
     const onRightTouchMove = (e) => {
-      if (e.cancelable) e.preventDefault();
+      e.preventDefault();
       if (!inputs.touchShoot.active) return;
       const t = Array.from(e.changedTouches).find((x) => x.identifier === inputs.touchShoot.id);
       if (!t) return;
@@ -929,7 +854,7 @@
     };
 
     const onRightTouchEnd = (e) => {
-      if (e.cancelable) e.preventDefault();
+      e.preventDefault();
       if (!inputs.touchShoot.active) return;
       const ended = Array.from(e.changedTouches).some((x) => x.identifier === inputs.touchShoot.id);
       if (!ended) return;
