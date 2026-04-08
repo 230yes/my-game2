@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
 
@@ -10,26 +10,38 @@
   const hudKills = document.getElementById('hudKills');
   const hudAmmo = document.getElementById('hudAmmo');
 
+  const start = document.getElementById('start');
   const menu = document.getElementById('menu');
+  const leaderboard = document.getElementById('leaderboard');
   const howto = document.getElementById('howto');
   const upgrades = document.getElementById('upgrades');
   const artifacts = document.getElementById('artifacts');
   const shop = document.getElementById('shop');
   const death = document.getElementById('death');
+  const pause = document.getElementById('pause');
 
   const menuRecord = document.getElementById('menuRecord');
+  const menuRecordName = document.getElementById('menuRecordName');
+  const leaderboardTabs = document.getElementById('leaderboardTabs');
+  const leaderboardList = document.getElementById('leaderboardList');
+  const btnAuth = null;
 
+  const btnEnter = document.getElementById('btnEnter');
+  const startNote = document.getElementById('startNote');
+  const btnGuest = document.getElementById('btnGuest');
   const btnStart = document.getElementById('btnStart');
   const btnHow = document.getElementById('btnHow');
   const btnUpgrades = document.getElementById('btnUpgrades');
   const btnBack = document.getElementById('btnBack');
   const btnUpgradesBack = document.getElementById('btnUpgradesBack');
   const btnShopContinue = document.getElementById('btnShopContinue');
+  const btnReward = document.getElementById('btnReward');
   const btnRestart = document.getElementById('btnRestart');
   const btnMenu = document.getElementById('btnMenu');
-  const btnGodMode = document.getElementById('btnGodMode');
-  const btnMegaDamage = document.getElementById('btnMegaDamage');
-  const btnInfiniteCoins = document.getElementById('btnInfiniteCoins');
+  const btnLeaderboard = document.getElementById('btnLeaderboard');
+  const btnLeaderboardBack = document.getElementById('btnLeaderboardBack');
+  const btnPause = document.getElementById('btnPause');
+  const btnResume = document.getElementById('btnResume');
   const arenaChoices = document.getElementById('arenaChoices');
   const weaponChoices = document.getElementById('weaponChoices');
 
@@ -60,7 +72,6 @@
   const reloadIndicator = document.getElementById('reloadIndicator');
   const reloadText = document.getElementById('reloadText');
   const reloadBar = document.getElementById('reloadBar');
-  const testerPanel = document.getElementById('testerPanel');
 
   // Logical game resolution (world size). Keep 16:9.
   const BASE_WIDTH = 640;
@@ -95,6 +106,7 @@
     inShop: false,
     inArtifact: false,
     gameOver: false,
+    paused: false,
     preparingWave: false,
     prepareTimer: 0,
     lastTime: 0,
@@ -103,7 +115,7 @@
     wave: 1,
     kills: 0,
     coins: 0,
-    bestUpgrade: '—',
+    bestUpgrade: '?',
     record: 0,
     bossWave: false,
     specialWaveType: null,
@@ -112,9 +124,6 @@
     artifacts: [],
     selectedArena: 'crypt',
     selectedWeapon: 'carbine',
-    godMode: false,
-    megaDamage: false,
-    infiniteCoins: false,
   };
 
   const player = {
@@ -510,37 +519,49 @@
     {
       id: 'blood_bolt',
       name: 'Кровавый затвор',
+      nameEn: 'Blood Bolt',
       desc: 'Чем меньше здоровья, тем быстрее стрельба. На низком HP почти вдвое быстрее.',
+      descEn: 'Lower health means faster fire rate. At low HP it is almost doubled.',
       apply: () => { state.artifacts.push('blood_bolt'); },
     },
     {
       id: 'vulture_heart',
       name: 'Сердце стервятника',
+      nameEn: 'Vulture Heart',
       desc: 'Каждое убийство лечит: обычный враг +3 HP, элита +6 HP, босс +20 HP.',
+      descEn: 'Each kill heals: normal +3 HP, elite +6 HP, boss +20 HP.',
       apply: () => { state.artifacts.push('vulture_heart'); },
     },
     {
       id: 'storm_trace',
       name: 'Грозовой след',
+      nameEn: 'Storm Trace',
       desc: 'Каждая пятая атака вызывает цепную молнию, бьющую по 3 целям.',
+      descEn: 'Every fifth attack triggers chain lightning hitting 3 targets.',
       apply: () => { state.artifacts.push('storm_trace'); },
     },
     {
       id: 'magnet_seal',
       name: 'Магнитная печать',
+      nameEn: 'Magnet Seal',
       desc: 'Сильнее тянет монеты. Подбор монеты даёт +15% скорости на 1,5 секунды.',
+      descEn: 'Stronger coin pull. Picking a coin gives +15% speed for 1.5s.',
       apply: () => { state.artifacts.push('magnet_seal'); },
     },
     {
       id: 'shop_echo',
       name: 'Эхо магазина',
+      nameEn: 'Shop Echo',
       desc: 'После перезарядки первый выстрел наносит на 60% больше урона.',
+      descEn: 'After reloading, the first shot deals 60% more damage.',
       apply: () => { state.artifacts.push('shop_echo'); },
     },
     {
       id: 'gold_vein',
       name: 'Золотая жилка',
+      nameEn: 'Gold Vein',
       desc: 'При подборе монеты есть 20% шанс получить ещё +1 сверху.',
+      descEn: 'Picking a coin has a 20% chance to grant +1 extra.',
       apply: () => { state.artifacts.push('gold_vein'); },
     },
   ];
@@ -609,8 +630,8 @@
     },
     {
       id: 'magazine',
-      name: 'Р”РѕРї. РїР°С‚СЂРѕРЅ',
-      desc: '+2 Рє РјР°РіР°Р·РёРЅСѓ',
+      name: 'Магазин',
+      desc: '+2 к патронам',
       baseCost: 24,
       apply: () => {
         progression.clipSize += 2;
@@ -620,7 +641,7 @@
     },
     {
       id: 'explosive',
-      name: 'Разрывные пули',
+      name: 'Взрывные пули',
       desc: 'Небольшой урон по области',
       baseCost: 30,
       apply: () => {
@@ -632,7 +653,7 @@
     },
     {
       id: 'heal',
-      name: 'Лечение',
+      name: 'Регенерация',
       desc: '+22 здоровья',
       baseCost: 18,
       apply: () => {
@@ -645,47 +666,82 @@
     damage: {
       name: '\u0423\u0440\u043e\u043d \u043f\u0443\u043b\u0438',
       desc: '+4 \u043a \u0443\u0440\u043e\u043d\u0443',
+      nameEn: 'Bullet Damage',
+      descEn: '+4 damage',
     },
     firerate: {
       name: '\u0421\u043a\u043e\u0440\u043e\u0441\u0442\u044c \u0441\u0442\u0440\u0435\u043b\u044c\u0431\u044b',
       desc: '+0.35 \u0432\u044b\u0441\u0442\u0440./\u0441\u0435\u043a',
+      nameEn: 'Fire Rate',
+      descEn: '+0.35 shots/sec',
     },
     speed: {
       name: '\u0421\u043a\u043e\u0440\u043e\u0441\u0442\u044c \u0431\u0435\u0433\u0430',
       desc: '+18 \u043a \u0441\u043a\u043e\u0440\u043e\u0441\u0442\u0438',
+      nameEn: 'Move Speed',
+      descEn: '+18 speed',
     },
     health: {
       name: '\u041c\u0430\u043a\u0441. \u0437\u0434\u043e\u0440\u043e\u0432\u044c\u0435',
       desc: '+14 \u043a \u043c\u0430\u043a\u0441\u0438\u043c\u0443\u043c\u0443',
+      nameEn: 'Max Health',
+      descEn: '+14 max HP',
     },
     arrowSpeed: {
       name: '\u0421\u043a\u043e\u0440\u043e\u0441\u0442\u044c \u043f\u0443\u043b\u0438',
       desc: '+85 \u043a \u0441\u043a\u043e\u0440\u043e\u0441\u0442\u0438',
+      nameEn: 'Projectile Speed',
+      descEn: '+85 speed',
     },
     multishot: {
       name: '\u0414\u043e\u043f. \u0432\u044b\u0441\u0442\u0440\u0435\u043b',
       desc: '+1 \u0441\u043d\u0430\u0440\u044f\u0434 \u0437\u0430 \u0430\u0442\u0430\u043a\u0443',
+      nameEn: 'Extra Shot',
+      descEn: '+1 shot per attack',
     },
     magazine: {
       name: '\u0411\u043e\u0435\u0437\u0430\u043f\u0430\u0441',
       desc: '+2 \u043a \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0443',
+      nameEn: 'Magazine',
+      descEn: '+2 ammo',
     },
     explosive: {
       name: '\u0420\u0430\u0437\u0440\u044b\u0432\u043d\u044b\u0435 \u043f\u0443\u043b\u0438',
       desc: '\u0412\u043a\u043b\u044e\u0447\u0430\u0435\u0442 \u0432\u0437\u0440\u044b\u0432\u044b, \u043a\u0430\u0436\u0434\u0430\u044f \u043f\u043e\u043a\u0443\u043f\u043a\u0430 +10% \u043a \u0438\u0445 \u0443\u0440\u043e\u043d\u0443',
+      nameEn: 'Explosive Rounds',
+      descEn: 'Explosions enabled; each purchase +10% damage',
     },
     heal: {
       name: '\u0420\u0435\u0433\u0435\u043d\u0435\u0440\u0430\u0446\u0438\u044f',
       desc: '+6 \u043a \u043b\u0435\u0447\u0435\u043d\u0438\u044e \u043c\u0435\u0436\u0434\u0443 \u0432\u043e\u043b\u043d\u0430\u043c\u0438',
+      nameEn: 'Regeneration',
+      descEn: '+6 healing between waves',
     },
   };
 
-  upgradePool.forEach((upgrade) => {
-    const text = upgradeTextById[upgrade.id];
-    if (!text) return;
-    upgrade.name = text.name;
-    upgrade.desc = text.desc;
-  });
+  function localizeUpgradesAndArtifacts() {
+    upgradePool.forEach((upgrade) => {
+      const text = upgradeTextById[upgrade.id];
+      if (!text) return;
+      if (currentLang === 'en') {
+        upgrade.name = text.nameEn || text.name;
+        upgrade.desc = text.descEn || text.desc;
+      } else {
+        upgrade.name = text.name;
+        upgrade.desc = text.desc;
+      }
+    });
+
+    artifactCatalog.forEach((artifact) => {
+      if (currentLang === 'en') {
+        artifact.name = artifact.nameEn || artifact.name;
+        artifact.desc = artifact.descEn || artifact.desc;
+      } else {
+        artifact.name = artifact.name;
+        artifact.desc = artifact.desc;
+      }
+    });
+  }
 
   function renderUpgradeGuide() {
     if (!upgradeGuide) return;
@@ -722,7 +778,7 @@
     return picks;
   }
 
-  function openArtifactChoice(title = 'Выберите артефакт') {
+  function openArtifactChoice(title = 'Выбор артефакта') {
     state.inArtifact = true;
     artifacts.classList.remove('hidden');
     artifactTitle.textContent = title;
@@ -737,7 +793,7 @@
       `;
       const btn = document.createElement('button');
       btn.className = 'btn primary';
-      btn.textContent = 'Взять';
+      btn.textContent = 'Выбрать';
       btn.addEventListener('click', () => {
         artifact.apply();
         state.pendingArtifact = false;
@@ -753,9 +809,9 @@
   const upgradeLevels = {};
 
   const deathQuotes = [
-    'Арена запомнит тебя, но недолго.',
-    'Патроны кончились раньше врагов.',
-    'Сегодня удача была на их стороне.',
+    'Арена запомнит тебя, но ненадолго.',
+    'Слишком много врагов — слишком мало времени.',
+    'Сегодня удача была не на твоей стороне.',
     'Ты пал, но бой был ярким.',
   ];
 
@@ -779,6 +835,231 @@
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   }
 
+  const translations = {
+    ru: {
+      title: 'Стрелок Арены',
+      start_note: 'Войдите, чтобы сохранять рекорды и показывать имя.',
+      btn_enter: 'Войти',
+      btn_enter_disabled: 'Войти (недоступно)',
+      btn_guest: 'Играть как гость',
+      record_label: 'Рекорд:',
+      location_title: 'Локация',
+      arena_crypt: 'Крипта',
+      arena_crypt_desc: 'Монеты тянутся дальше',
+      arena_forge: 'Кузня',
+      arena_forge_desc: 'Быстрее стрельба',
+      arena_citadel: 'Цитадель',
+      arena_citadel_desc: 'Больше здоровья',
+      weapon_title: 'Оружие',
+      weapon_carbine: 'Карабин',
+      weapon_carbine_desc: 'Ровный универсал',
+      weapon_scatter: 'Дробовик',
+      weapon_scatter_desc: 'Ближний разрывной бой',
+      weapon_lancer: 'Ланцер',
+      weapon_lancer_desc: 'Медленный мощный выстрел',
+      weapon_storm: 'Штормер',
+      weapon_storm_desc: 'Быстрые двойные заряды',
+      btn_start: 'Начать игру',
+      btn_how: 'Как играть',
+      btn_upgrades: 'Улучшения',
+      btn_leaderboard: 'Таблица рекордов',
+      leaderboard_title: 'Таблица рекордов',
+      tab_time: 'Время',
+      tab_waves: 'Волны',
+      tab_kills: 'Убийства',
+      loading: 'Загрузка...',
+      no_data: 'Нет данных',
+      btn_back: 'Назад',
+      howto_title: 'Как играть',
+      howto_1: 'Движение: WASD или стрелки, на телефоне левый джойстик.',
+      howto_2: 'Стрельба: мышь или правый джойстик на телефоне. Перезарядка: R.',
+      howto_3: 'Волны бесконечны. После каждой волны магазин.',
+      howto_4: 'Таймер времени не останавливается.',
+      howto_5: 'Игра заканчивается только при смерти.',
+      upgrades_title: 'Улучшения',
+      artifacts_title: 'Артефакт',
+      shop_title: 'Магазин',
+      btn_reward: 'Реклама: +20 монет',
+      btn_shop_continue: 'Продолжить',
+      pause_title: 'Пауза',
+      pause_text: 'Игра остановлена. Нажми «Продолжить».',
+      btn_resume: 'Продолжить',
+      death_title: 'Вы умерли',
+      death_time_label: 'Время:',
+      death_waves_label: 'Волн пройдено:',
+      death_kills_label: 'Врагов убито:',
+      death_coins_label: 'Монет собрано:',
+      death_upgrade_label: 'Лучшее улучшение:',
+      death_record_label: 'Рекорд:',
+      btn_restart: 'Новая игра',
+      btn_menu: 'В меню',
+      hud_health: 'Здоровье',
+      hud_wave: 'Волна',
+      hud_coins: 'Монеты',
+      hud_ammo: 'Патроны',
+      hud_time: 'Время',
+      hud_kills: 'Убийств',
+      btn_pause: 'Пауза',
+      boss_name: 'Босс',
+      reload_label: 'Перезарядка',
+      auth_unavailable: 'Авторизация станет доступна после публикации в Яндекс Играх. Сейчас можно играть гостем.',
+      ads_unavailable: 'Реклама станет доступна после публикации в Яндекс Играх.',
+    },
+    en: {
+      title: 'Arena Archer',
+      start_note: 'Sign in to save records and show your name.',
+      btn_enter: 'Sign in',
+      btn_enter_disabled: 'Sign in (unavailable)',
+      btn_guest: 'Play as guest',
+      record_label: 'Record:',
+      location_title: 'Arena',
+      arena_crypt: 'Crypt',
+      arena_crypt_desc: 'Coins attract from farther',
+      arena_forge: 'Forge',
+      arena_forge_desc: 'Faster fire rate',
+      arena_citadel: 'Citadel',
+      arena_citadel_desc: 'More health',
+      weapon_title: 'Weapon',
+      weapon_carbine: 'Carbine',
+      weapon_carbine_desc: 'Balanced all‑rounder',
+      weapon_scatter: 'Scatter',
+      weapon_scatter_desc: 'Close‑range burst',
+      weapon_lancer: 'Lancer',
+      weapon_lancer_desc: 'Slow heavy shot',
+      weapon_storm: 'Stormer',
+      weapon_storm_desc: 'Fast double shots',
+      btn_start: 'Start game',
+      btn_how: 'How to play',
+      btn_upgrades: 'Upgrades',
+      btn_leaderboard: 'Leaderboard',
+      leaderboard_title: 'Leaderboard',
+      tab_time: 'Time',
+      tab_waves: 'Waves',
+      tab_kills: 'Kills',
+      loading: 'Loading...',
+      no_data: 'No data',
+      btn_back: 'Back',
+      howto_title: 'How to play',
+      howto_1: 'Move: WASD or arrows; on phone use the left joystick.',
+      howto_2: 'Shoot: mouse or right joystick. Reload: R.',
+      howto_3: 'Waves are endless. Shop after each wave.',
+      howto_4: 'Time never stops.',
+      howto_5: 'Game ends only on death.',
+      upgrades_title: 'Upgrades',
+      artifacts_title: 'Artifact',
+      shop_title: 'Shop',
+      btn_reward: 'Ad: +20 coins',
+      btn_shop_continue: 'Continue',
+      pause_title: 'Paused',
+      pause_text: 'Game paused. Tap “Resume”.',
+      btn_resume: 'Resume',
+      death_title: 'You died',
+      death_time_label: 'Time:',
+      death_waves_label: 'Waves cleared:',
+      death_kills_label: 'Enemies killed:',
+      death_coins_label: 'Coins collected:',
+      death_upgrade_label: 'Best upgrade:',
+      death_record_label: 'Record:',
+      btn_restart: 'New game',
+      btn_menu: 'Menu',
+      hud_health: 'Health',
+      hud_wave: 'Wave',
+      hud_coins: 'Coins',
+      hud_ammo: 'Ammo',
+      hud_time: 'Time',
+      hud_kills: 'Kills',
+      btn_pause: 'Pause',
+      boss_name: 'Boss',
+      reload_label: 'Reloading',
+      auth_unavailable: 'Sign‑in will be available after publishing on Yandex Games. You can play as guest.',
+      ads_unavailable: 'Ads will be available after publishing on Yandex Games.',
+    },
+  };
+
+  function t(key) {
+    const dict = translations[currentLang] || translations.ru;
+    return dict[key] || translations.ru[key] || key;
+  }
+
+  function applyLanguage(lang) {
+    currentLang = (lang === 'en' || lang === 'ru') ? lang : 'ru';
+    document.documentElement.lang = currentLang;
+    document.title = t('title');
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+      const key = el.getAttribute('data-i18n');
+      if (!key) return;
+      el.textContent = t(key);
+    });
+    localizeUpgradesAndArtifacts();
+    renderUpgradeGuide();
+  }
+
+  function enterFullscreen() {
+    const el = document.documentElement;
+    if (!el) return;
+    if (document.fullscreenElement || document.webkitFullscreenElement) return;
+    const request = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    if (request) {
+      try { request.call(el); } catch (e) { /* ignore */ }
+    }
+  }
+
+  function setPaused(next) {
+    const shouldPause = Boolean(next);
+    if (state.paused === shouldPause) return;
+    state.paused = shouldPause;
+    if (state.paused) {
+      pause.classList.remove('hidden');
+    } else {
+      pause.classList.add('hidden');
+      state.lastTime = performance.now();
+    }
+  }
+
+  function showInterstitial() {
+    if (!ysdk?.adv?.showFullscreenAdv) return;
+    const wasRunning = state.running && !state.gameOver;
+    if (wasRunning) setPaused(true);
+    try {
+      ysdk.adv.showFullscreenAdv({
+        callbacks: {
+          onClose: () => { if (wasRunning) setPaused(false); },
+          onError: () => { if (wasRunning) setPaused(false); },
+          onOffline: () => { if (wasRunning) setPaused(false); },
+        },
+      });
+    } catch (e) {
+      if (wasRunning) setPaused(false);
+      // ignore
+    }
+  }
+
+  function showRewarded(rewardCoins = 20) {
+    if (!ysdk?.adv?.showRewardedVideo) {
+      if (startNote) {
+        startNote.textContent = t('ads_unavailable');
+      }
+      return;
+    }
+    const wasRunning = state.running && !state.gameOver;
+    if (wasRunning) setPaused(true);
+    try {
+      ysdk.adv.showRewardedVideo({
+        callbacks: {
+          onRewarded: () => {
+            state.coins += rewardCoins;
+            hudCoins.textContent = state.coins;
+          },
+          onError: () => { if (wasRunning) setPaused(false); },
+          onClose: () => { if (wasRunning) setPaused(false); },
+        },
+      });
+    } catch (e) {
+      if (wasRunning) setPaused(false);
+      // ignore
+    }
+  }
+
   function readRecord() {
     const raw = localStorage.getItem('arena_shooter_record');
     const val = raw ? parseInt(raw, 10) : 0;
@@ -790,15 +1071,171 @@
     localStorage.setItem('arena_shooter_record', String(state.record));
   }
 
-  function updateTesterButtons() {
-    btnGodMode.textContent = `Бессмертие: ${state.godMode ? 'ON' : 'OFF'}`;
-    btnMegaDamage.textContent = `Урон 9999: ${state.megaDamage ? 'ON' : 'OFF'}`;
-    btnInfiniteCoins.textContent = `Монеты: ${state.infiniteCoins ? 'ON' : 'OFF'}`;
-    btnGodMode.classList.toggle('active', state.godMode);
-    btnMegaDamage.classList.toggle('active', state.megaDamage);
-    btnInfiniteCoins.classList.toggle('active', state.infiniteCoins);
+  let ysdk = null;
+  let playerName = '';
+  let playerId = '';
+  let currentLang = 'ru';
+
+  const LEADERBOARDS = {
+    time: { name: 'archer_time', type: 'time' },
+    waves: { name: 'archer_waves', type: 'number' },
+    kills: { name: 'archer_kills', type: 'number' },
+  };
+  let currentBoard = 'time';
+
+  function setLeaderboardLoading(message) {
+    const msg = message || t('loading');
+    if (leaderboardList) {
+      leaderboardList.innerHTML = `<div class="leaderboard-row muted">${msg}</div>`;
+    }
   }
 
+  function getEntryName(entry) {
+    return entry?.public_name
+      || entry?.player?.publicName
+      || entry?.player?.public_name
+      || entry?.player?.name
+      || 'Игрок';
+  }
+
+  function formatLeaderboardScore(entry, boardKey) {
+    const board = LEADERBOARDS[boardKey] || LEADERBOARDS.time;
+    const raw = entry?.formattedScore || entry?.formatted_score;
+    if (raw) return raw;
+    const score = Number(entry?.score || 0);
+    if (board.type === 'time') {
+      return formatTime(Math.floor(score / 1000));
+    }
+    return String(score);
+  }
+
+  function renderLeaderboard(entries) {
+    if (!entries || !entries.length) {
+      setLeaderboardLoading(t('no_data'));
+      return;
+    }
+    let selfEntry = null;
+    const rows = entries.map((entry, idx) => {
+      const rank = entry?.rank ?? (idx + 1);
+      const name = getEntryName(entry);
+      const score = formatLeaderboardScore(entry, currentBoard);
+      if (entry?.player?.uniqueID && playerId && entry.player.uniqueID === playerId) {
+        selfEntry = { rank, name, score };
+      }
+      const topClass = rank === 1 ? 'top-1' : rank === 2 ? 'top-2' : rank === 3 ? 'top-3' : '';
+      return `<div class="leaderboard-row ${topClass}"><span class="leaderboard-rank">${rank}</span><span class="leaderboard-name">${name}</span><span class="leaderboard-score">${score}</span></div>`;
+    }).join('');
+    if (leaderboardList) {
+      leaderboardList.innerHTML = rows;
+      const self = selfEntry || findSelfEntry(entries);
+      if (self) {
+        const selfRow = `<div class="leaderboard-self">Твоё место: #${self.rank} • ${self.name} • ${self.score}</div>`;
+        leaderboardList.insertAdjacentHTML('beforeend', selfRow);
+      }
+    }
+  }
+
+  function findSelfEntry(entries) {
+    if (!playerId) return null;
+    const match = entries.find((e) => e?.player?.uniqueID && e.player.uniqueID === playerId);
+    if (!match) return null;
+    return {
+      rank: match.rank,
+      name: getEntryName(match),
+      score: formatLeaderboardScore(match, currentBoard),
+    };
+  }
+
+  async function refreshLeaderboard() {
+    if (!ysdk || !ysdk.leaderboards || !ysdk.leaderboards.getEntries) {
+      setLeaderboardLoading(t('no_data'));
+      return;
+    }
+    try {
+      setLeaderboardLoading('Загрузка...');
+      const board = LEADERBOARDS[currentBoard] || LEADERBOARDS.time;
+      const res = await ysdk.leaderboards.getEntries(board.name, {
+        quantityTop: 10,
+        includeUser: true,
+        quantityAround: 2,
+      });
+      const entries = res?.entries || res?.entries?.entries || [];
+      renderLeaderboard(entries);
+    } catch (e) {
+      setLeaderboardLoading(t('no_data'));
+    }
+  }
+
+  async function submitScores() {
+    if (!ysdk || !ysdk.leaderboards || !ysdk.leaderboards.setScore || !ysdk.isAvailableMethod) return;
+    try {
+      const ok = await ysdk.isAvailableMethod('leaderboards.setScore');
+      if (!ok) return;
+      const timeMs = Math.max(0, Math.floor(state.elapsed * 1000));
+      const waves = Math.max(0, state.wave);
+      const kills = Math.max(0, state.kills);
+      await ysdk.leaderboards.setScore(LEADERBOARDS.time.name, timeMs);
+      await ysdk.leaderboards.setScore(LEADERBOARDS.waves.name, waves);
+      await ysdk.leaderboards.setScore(LEADERBOARDS.kills.name, kills);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  function bindLeaderboardTabs(container) {
+    if (!container) return;
+    const tabs = Array.from(container.querySelectorAll('.leaderboard-tab'));
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const board = tab.getAttribute('data-board');
+        if (!board || !LEADERBOARDS[board]) return;
+        currentBoard = board;
+        tabs.forEach((t) => t.classList.toggle('active', t === tab));
+        refreshLeaderboard();
+      });
+    });
+  }
+
+
+
+  async function initSDK() {
+    if (!window.YaGames) {
+      if (btnEnter) { btnEnter.disabled = true; btnEnter.textContent = t('btn_enter_disabled'); }
+      if (startNote) { startNote.textContent = t('auth_unavailable'); }
+      return;
+    }
+    try {
+      ysdk = await YaGames.init();
+      if (ysdk?.features?.LoadingAPI?.ready) {
+        ysdk.features.LoadingAPI.ready();
+      }
+      currentLang = ysdk?.environment?.i18n?.lang || 'ru';
+      applyLanguage(currentLang);
+      if (ysdk?.on) {
+        ysdk.on('game_api_pause', () => {
+          if (state.running && !state.gameOver) setPaused(true);
+        });
+        ysdk.on('game_api_resume', () => {
+          if (state.running && !state.gameOver) setPaused(false);
+        });
+      }
+      if (ysdk?.getPlayer) {
+        try {
+          const player = await ysdk.getPlayer({ scopes: false });
+          playerName = player?.getName?.() || '';
+          playerId = player?.getUniqueID?.() || '';
+          if (menuRecordName) {
+            menuRecordName.textContent = playerName ? `• ${playerName}` : '';
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+      refreshLeaderboard();
+    } catch (e) {
+      // ignore
+    }
+  }
   function refreshPlayerStats(options = {}) {
     const { preserveHealth = false, preserveAmmo = false } = options;
     const weapon = weaponCatalog[state.selectedWeapon] || weaponCatalog.carbine;
@@ -876,10 +1313,11 @@
     state.inShop = false;
     state.inArtifact = false;
     state.gameOver = false;
+    state.paused = false;
     state.wave = 1;
     state.kills = 0;
     state.coins = 0;
-    state.bestUpgrade = '—';
+    state.bestUpgrade = '?';
     state.bossWave = false;
     state.specialWaveType = null;
     state.lastWaveWasSpecial = false;
@@ -951,8 +1389,6 @@
     resetPlayer();
     beginWaveCountdown();
     updateHud();
-    testerPanel.classList.remove('hidden');
-    updateTesterButtons();
   }
 
   function beginWaveCountdown() {
@@ -1188,10 +1624,10 @@
       const btn = document.createElement('button');
       btn.className = 'btn';
       btn.textContent = 'Купить';
-      btn.disabled = !state.infiniteCoins && state.coins < cost;
+      btn.disabled = !false && state.coins < cost;
       btn.addEventListener('click', () => {
-        if (!state.infiniteCoins && state.coins < cost) return;
-        if (!state.infiniteCoins) state.coins -= cost;
+        if (!false && state.coins < cost) return;
+        if (!false) state.coins -= cost;
         opt.apply();
         upgradeLevels[opt.id] = (upgradeLevels[opt.id] || 0) + 1;
         state.bestUpgrade = opt.name;
@@ -1222,13 +1658,14 @@
     shop.classList.add('hidden');
     state.wave += 1;
     player.health = Math.min(player.maxHealth, player.health + 10 + progression.waveHeal);
+    enemyProjectiles.length = 0;
     beginWaveCountdown();
   }
 
   function updateHud() {
     hudHealth.textContent = Math.max(0, Math.round(player.health));
     hudWave.textContent = state.wave;
-    hudCoins.textContent = state.infiniteCoins ? '∞' : state.coins;
+    hudCoins.textContent = state.coins;
     hudKills.textContent = state.kills;
     hudTime.textContent = formatTime(state.elapsed);
     if (hudAmmo) {
@@ -1254,7 +1691,7 @@
       reloadIndicator.classList.remove('hidden');
       reloadBar.style.width = `${Math.round(progress * 100)}%`;
       const reloadSeconds = (Math.ceil(player.reloadLeft * 10) / 10).toFixed(1).replace('.', ',');
-      reloadText.textContent = `Перезарядка ${reloadSeconds}с`;
+      reloadText.textContent = `Перезарядка: ${reloadSeconds}с`;
     } else {
       reloadIndicator.classList.add('hidden');
     }
@@ -1271,7 +1708,7 @@
     const weapon = weaponCatalog[state.selectedWeapon] || weaponCatalog.carbine;
     const now = performance.now();
     let effectiveFireRate = player.fireRate;
-    if (hasArtifact('blood_bolt') && !state.godMode) {
+    if (hasArtifact('blood_bolt') && !false) {
       const missingRatio = clamp(1 - player.health / player.maxHealth, 0, 0.9);
       effectiveFireRate *= 1 + missingRatio;
     }
@@ -1302,7 +1739,7 @@
       const lane = totalShots > 1 ? (i - (totalShots - 1) / 2) : 0;
       const offset = lane * spread;
       const lateralOffset = extraShots > 0 && weapon.shots === 1 ? lane * 6 : 0;
-      let shotDamage = state.megaDamage ? 9999 : player.damage;
+      let shotDamage = false ? 9999 : player.damage;
       if (hasArtifact('shop_echo') && artifactRuntime.echoLoaded) {
         shotDamage *= 1.6;
       }
@@ -1387,7 +1824,7 @@
         state.pendingArtifact = Math.random() < artifactChance;
       }
       if (state.pendingArtifact) {
-        const title = state.bossWave ? 'Артефакт босса' : 'Редкий артефакт';
+        const title = state.bossWave ? 'Награда босса' : 'Выбор артефакта';
         openArtifactChoice(title);
       } else {
         openShop();
@@ -1407,7 +1844,7 @@
     state.prepareTimer = 0;
     waveBanner.classList.add('hidden');
     player.invuln = Math.max(player.invuln, 0.6);
-    showWaveBanner(state.wave % 5 === 0 ? 'Бой с боссом!' : `Волна ${state.wave}`);
+    showWaveBanner(state.wave % 5 === 0 ? 'Босс на арене!' : `Волна ${state.wave}`);
     spawnWave();
   }
 
@@ -1512,7 +1949,7 @@
     if (e.eliteType === 'explosive' || e.kamikaze) {
       const blastDamage = Math.round(18 + state.wave * 0.35);
       spawnParticles(e.x, e.y, '#ff8787', 12, 120, 0.28, 3.4);
-      if (!state.godMode && dist(e.x, e.y, player.x, player.y) <= 42 && player.invuln <= 0) {
+      if (!false && dist(e.x, e.y, player.x, player.y) <= 42 && player.invuln <= 0) {
         player.health -= blastDamage;
         player.invuln = 0.5;
         flashDamage(0.65);
@@ -1556,7 +1993,7 @@
         puddles.splice(i, 1);
         continue;
       }
-      if (!state.godMode && dist(puddle.x, puddle.y, player.x, player.y) <= puddle.radius + player.r && puddle.tickTimer <= 0) {
+      if (!false && dist(puddle.x, puddle.y, player.x, player.y) <= puddle.radius + player.r && puddle.tickTimer <= 0) {
         puddle.tickTimer = 0.5;
         player.health -= 4;
         flashDamage(0.35);
@@ -1583,7 +2020,7 @@
         state.coins += c.value;
         if (hasArtifact('gold_vein') && Math.random() < 0.2) {
           state.coins += 1;
-          spawnFloatingText(c.x, c.y - 14, '+1 бонус', '#ffe066', 16, 0.35, 9);
+          spawnFloatingText(c.x, c.y - 14, '+1 монета', '#ffe066', 16, 0.35, 9);
         }
         if (hasArtifact('magnet_seal')) {
           artifactRuntime.speedBoostTimer = 1.5;
@@ -1652,7 +2089,7 @@
       e.y = clamp(e.y, e.r, worldHeight - e.r);
 
       if (dist(e.x, e.y, player.x, player.y) < e.r + player.r) {
-        if (state.godMode) continue;
+        if (false) continue;
         if (player.invuln <= 0) {
           player.health -= e.contactDamage;
           player.invuln = 0.5;
@@ -1690,7 +2127,7 @@
 
       if (enemy.specialCooldown <= 0 && projectilePressure <= 10) {
         fireRadialBurst(enemy, enemy.health < enemy.maxHealth * 0.45 ? 10 : 7, enemy.projectileSpeed * 0.62, enemy.damage * 0.72);
-        spawnFloatingText(enemy.x, enemy.y - 34, 'Костяной шторм', '#d8dde6', 20, 0.75, 12);
+        spawnFloatingText(enemy.x, enemy.y - 34, 'Костяной залп', '#d8dde6', 20, 0.75, 12);
         shakeScreen(0.16, 6);
         enemy.specialCooldown = enemy.health < enemy.maxHealth * 0.45 ? 3.2 : 4.8;
         enemy.attackTimer = Math.max(enemy.attackTimer, 0.8);
@@ -1721,7 +2158,7 @@
 
       if (enemy.specialCooldown <= 0 && projectilePressure <= 9) {
         fireEnemyBurst(enemy, angle, enemy.health < enemy.maxHealth * 0.5 ? 4 : 3, 0.22, 190);
-        spawnFloatingText(enemy.x, enemy.y - 34, 'Кислотный плевок', '#8ff7c2', 22, 0.75, 12);
+        spawnFloatingText(enemy.x, enemy.y - 34, 'Слизевой плевок', '#8ff7c2', 22, 0.75, 12);
         enemy.specialCooldown = enemy.health < enemy.maxHealth * 0.5 ? 3.4 : 4.6;
         enemy.attackTimer = Math.max(enemy.attackTimer, 0.9);
       } else if (enemy.attackTimer <= 0 && projectilePressure <= 7) {
@@ -1737,7 +2174,7 @@
       if (enemy.phaseTimer <= 0) {
         enemy.phaseTimer = enemy.health < enemy.maxHealth * 0.5 ? 1.4 : 2.2;
         fireRadialBurst(enemy, enemy.health < enemy.maxHealth * 0.5 ? 10 : 7, 170, enemy.damage * 0.7, '#ffb46a');
-        spawnFloatingText(enemy.x, enemy.y - 34, 'Лавовый удар', '#ffb46a', 22, 0.7, 12);
+        spawnFloatingText(enemy.x, enemy.y - 34, 'Жар ядра', '#ffb46a', 22, 0.7, 12);
         shakeScreen(0.22, 8);
       }
 
@@ -1750,7 +2187,7 @@
       }
 
       if (enemy.summonCooldown <= 0) {
-        summonMinions(enemy.x, enemy.y, enemy.health < enemy.maxHealth * 0.5 ? 3 : 2, ['Голем', 'Слизь']);
+        summonMinions(enemy.x, enemy.y, enemy.health < enemy.maxHealth * 0.5 ? 3 : 2, ['Слизь', 'Голем']);
         enemy.summonCooldown = enemy.health < enemy.maxHealth * 0.5 ? 5.2 : 6.8;
       }
     } else if (enemy.type === 'Око бури') {
@@ -1776,7 +2213,7 @@
       if (enemy.specialCooldown <= 0 && projectilePressure <= 9) {
         fireEnemyBurst(enemy, angle, enemy.health < enemy.maxHealth * 0.45 ? 7 : 5, 0.1, enemy.projectileSpeed * 1.05);
         fireRadialBurst(enemy, enemy.health < enemy.maxHealth * 0.45 ? 8 : 6, enemy.projectileSpeed * 0.6, enemy.damage * 0.55, '#c7a6ff');
-        spawnFloatingText(enemy.x, enemy.y - 34, 'Разлом пустоты', '#c7a6ff', 20, 0.75, 12);
+        spawnFloatingText(enemy.x, enemy.y - 34, 'Теневой всплеск', '#c7a6ff', 20, 0.75, 12);
         enemy.specialCooldown = enemy.health < enemy.maxHealth * 0.45 ? 3.6 : 5;
         enemy.attackTimer = Math.max(enemy.attackTimer, 1.0);
       } else if (enemy.attackTimer <= 0 && projectilePressure <= 6) {
@@ -1865,7 +2302,7 @@
       minion.y = clamp(y + rand(-28, 28), minion.r + 18, worldHeight - minion.r - 18);
       enemies.push(minion);
     }
-    spawnFloatingText(x, y - 26, `Призыв x${count}`, '#8ff7c2', 20, 0.7, 12);
+    spawnFloatingText(x, y - 26, `Миньоны x${count}`, '#8ff7c2', 20, 0.7, 12);
   }
 
   function updateEnemyProjectiles(delta) {
@@ -1888,7 +2325,7 @@
 
       if (dist(projectile.x, projectile.y, player.x, player.y) <= player.r + projectile.r) {
         enemyProjectiles.splice(i, 1);
-        if (state.godMode || player.invuln > 0) continue;
+        if (false || player.invuln > 0) continue;
         player.health -= projectile.damage;
         player.invuln = 0.5;
         flashDamage(0.6);
@@ -1910,7 +2347,6 @@
     hud.classList.add('hidden');
     bossHud.classList.add('hidden');
     reloadIndicator.classList.add('hidden');
-    testerPanel.classList.add('hidden');
     death.classList.remove('hidden');
     deathQuote.textContent = `Ошибка: ${err && err.message ? err.message : String(err)}`;
   }
@@ -1918,6 +2354,8 @@
   function die() {
     state.gameOver = true;
     state.running = false;
+    state.paused = false;
+    pause.classList.add('hidden');
 
     const elapsed = state.elapsed;
     if (elapsed > state.record) {
@@ -1937,7 +2375,9 @@
     hud.classList.add('hidden');
     bossHud.classList.add('hidden');
     reloadIndicator.classList.add('hidden');
-    testerPanel.classList.add('hidden');
+    submitScores();
+    refreshLeaderboard();
+    showInterstitial();
   }
 
   function render() {
@@ -2276,6 +2716,11 @@
     state.lastTime = timestamp;
 
     try {
+      if (state.paused) {
+        render();
+        requestAnimationFrame(loop);
+        return;
+      }
       update(delta);
       render();
     } catch (err) {
@@ -2481,7 +2926,7 @@
       inputs.shooting = false;
     });
 
-    // ТОЛЬКО TOUCH СОБЫТИЯ (без pointer)
+    // Сброс TOUCH стиков (без pointer)
     const touchOpts = { passive: false };
 
     const onLeftTouchStart = (e) => {
@@ -2558,52 +3003,82 @@
     touchRight.addEventListener('touchcancel', onRightTouchEnd, touchOpts);
   }
 
+  function showMenu() {
+    start.classList.add('hidden');
+    leaderboard.classList.add('hidden');
+    howto.classList.add('hidden');
+    upgrades.classList.add('hidden');
+    artifacts.classList.add('hidden');
+    pause.classList.add('hidden');
+    state.paused = false;
+    state.inMenu = true;
+    menu.classList.remove('hidden');
+  }
+
   function setupButtons() {
-    btnGodMode.addEventListener('click', () => {
-      state.godMode = !state.godMode;
-      updateTesterButtons();
-    });
-
-    btnMegaDamage.addEventListener('click', () => {
-      state.megaDamage = !state.megaDamage;
-      updateTesterButtons();
-    });
-
-    btnInfiniteCoins.addEventListener('click', () => {
-      state.infiniteCoins = !state.infiniteCoins;
-      updateTesterButtons();
-      updateHud();
-      if (state.inShop) openShop();
-    });
+    bindLeaderboardTabs(leaderboardTabs);
+    if (btnEnter) {
+      btnEnter.addEventListener('click', async () => {
+        enterFullscreen();
+        if (!ysdk?.auth?.openAuthDialog) {
+          if (startNote) {
+            startNote.textContent = t('auth_unavailable');
+          }
+          return;
+        }
+        btnEnter.disabled = true;
+        try {
+          await ysdk.auth.openAuthDialog();
+        } catch (e) {
+          // ignore
+        }
+        btnEnter.disabled = false;
+        showMenu();
+        submitScores();
+      });
+    }
+    if (btnGuest) {
+      btnGuest.addEventListener('click', () => {
+        enterFullscreen();
+        showMenu();
+      });
+    }
 
     arenaChoices.querySelectorAll('[data-arena]').forEach((button) => {
       button.addEventListener('click', () => {
-        state.selectedArena = button.dataset.arena;
-        arenaChoices.querySelectorAll('[data-arena]').forEach((item) => item.classList.toggle('active', item === button));
+        arenaChoices.querySelectorAll('.choice-card').forEach((c) => c.classList.remove('active'));
+        button.classList.add('active');
+        state.selectedArena = button.getAttribute('data-arena');
         arenaPattern = null;
       });
     });
 
     weaponChoices.querySelectorAll('[data-weapon]').forEach((button) => {
       button.addEventListener('click', () => {
-        state.selectedWeapon = button.dataset.weapon;
-        weaponChoices.querySelectorAll('[data-weapon]').forEach((item) => item.classList.toggle('active', item === button));
+        weaponChoices.querySelectorAll('.choice-card').forEach((c) => c.classList.remove('active'));
+        button.classList.add('active');
+        state.selectedWeapon = button.getAttribute('data-weapon');
       });
     });
 
     btnStart.addEventListener('click', () => {
+      enterFullscreen();
       menu.classList.add('hidden');
       howto.classList.add('hidden');
       upgrades.classList.add('hidden');
-      artifacts.classList.add('hidden');
+      leaderboard.classList.add('hidden');
       death.classList.add('hidden');
       shop.classList.add('hidden');
+      artifacts.classList.add('hidden');
       hud.classList.remove('hidden');
+      pause.classList.add('hidden');
+      state.paused = false;
       resetGame();
     });
 
     btnHow.addEventListener('click', () => {
       howto.classList.remove('hidden');
+      leaderboard.classList.add('hidden');
       upgrades.classList.add('hidden');
       menu.classList.add('hidden');
     });
@@ -2615,6 +3090,7 @@
 
     btnUpgrades.addEventListener('click', () => {
       upgrades.classList.remove('hidden');
+      leaderboard.classList.add('hidden');
       howto.classList.add('hidden');
       menu.classList.add('hidden');
     });
@@ -2624,9 +3100,30 @@
       menu.classList.remove('hidden');
     });
 
+    if (btnLeaderboard) {
+      btnLeaderboard.addEventListener('click', () => {
+        leaderboard.classList.remove('hidden');
+        menu.classList.add('hidden');
+        refreshLeaderboard();
+      });
+    }
+
+    if (btnLeaderboardBack) {
+      btnLeaderboardBack.addEventListener('click', () => {
+        leaderboard.classList.add('hidden');
+        menu.classList.remove('hidden');
+      });
+    }
+
     btnShopContinue.addEventListener('click', () => {
       closeShop();
     });
+
+    if (btnReward) {
+      btnReward.addEventListener('click', () => {
+        showRewarded(20);
+      });
+    }
 
     btnRestart.addEventListener('click', () => {
       death.classList.add('hidden');
@@ -2636,16 +3133,32 @@
     });
 
     btnMenu.addEventListener('click', () => {
+      refreshLeaderboard();
       death.classList.add('hidden');
       hud.classList.add('hidden');
       reloadIndicator.classList.add('hidden');
       bossHud.classList.add('hidden');
-      testerPanel.classList.add('hidden');
       upgrades.classList.add('hidden');
       artifacts.classList.add('hidden');
       howto.classList.add('hidden');
+      leaderboard.classList.add('hidden');
+      pause.classList.add('hidden');
+      state.paused = false;
       menu.classList.remove('hidden');
     });
+
+    if (btnPause) {
+      btnPause.addEventListener('click', () => {
+        if (!state.running || state.gameOver || state.inMenu || state.inShop || state.inArtifact) return;
+        setPaused(true);
+      });
+    }
+    if (btnResume) {
+      btnResume.addEventListener('click', () => {
+        if (!state.running || state.gameOver) return;
+        setPaused(false);
+      });
+    }
   }
 
   function setupTouch() {
@@ -3272,13 +3785,49 @@
     resize();
     createSprites();
     readRecord();
+    applyLanguage(currentLang);
+    initSDK();
     renderUpgradeGuide();
     bindControls();
     setupButtons();
     setupTouch();
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    document.addEventListener('selectstart', (e) => e.preventDefault());
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && state.running && !state.gameOver) {
+        setPaused(true);
+      }
+    });
+    window.addEventListener('blur', () => {
+      if (state.running && !state.gameOver) {
+        setPaused(true);
+      }
+    });
     window.addEventListener('resize', resize);
     requestAnimationFrame(loop);
   }
 
   init();
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
