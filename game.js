@@ -186,6 +186,8 @@
     bossBarDisplay: 0,
   };
 
+  let isTouchDevice = false;
+
   const progression = {
     damage: 0,
     fireRate: 0,
@@ -1014,6 +1016,19 @@
       pause.classList.add('hidden');
       state.lastTime = performance.now();
     }
+    updateTouchVisibility();
+  }
+
+  function updateTouchVisibility() {
+    if (!touchLayer) return;
+    const shouldShow = isTouchDevice
+      && state.running
+      && !state.inMenu
+      && !state.inShop
+      && !state.inArtifact
+      && !state.gameOver
+      && !state.paused;
+    touchLayer.classList.toggle('hidden', !shouldShow);
   }
 
   function showInterstitial() {
@@ -1324,6 +1339,7 @@
     state.pendingArtifact = false;
     state.startTime = performance.now();
     state.elapsed = 0;
+    updateTouchVisibility();
     state.lastTime = 0;
 
     player.maxHealth = 100;
@@ -1610,6 +1626,7 @@
     state.inShop = true;
     shop.classList.remove('hidden');
     shopItems.innerHTML = '';
+    updateTouchVisibility();
 
     const options = pickUpgrades();
     options.forEach((opt) => {
@@ -1660,6 +1677,7 @@
     player.health = Math.min(player.maxHealth, player.health + 10 + progression.waveHeal);
     enemyProjectiles.length = 0;
     beginWaveCountdown();
+    updateTouchVisibility();
   }
 
   function updateHud() {
@@ -2356,6 +2374,7 @@
     state.running = false;
     state.paused = false;
     pause.classList.add('hidden');
+    updateTouchVisibility();
 
     const elapsed = state.elapsed;
     if (elapsed > state.record) {
@@ -3013,6 +3032,7 @@
     state.paused = false;
     state.inMenu = true;
     menu.classList.remove('hidden');
+    updateTouchVisibility();
   }
 
   function setupButtons() {
@@ -3074,6 +3094,7 @@
       pause.classList.add('hidden');
       state.paused = false;
       resetGame();
+      updateTouchVisibility();
     });
 
     btnHow.addEventListener('click', () => {
@@ -3081,11 +3102,13 @@
       leaderboard.classList.add('hidden');
       upgrades.classList.add('hidden');
       menu.classList.add('hidden');
+      updateTouchVisibility();
     });
 
     btnBack.addEventListener('click', () => {
       howto.classList.add('hidden');
       menu.classList.remove('hidden');
+      updateTouchVisibility();
     });
 
     btnUpgrades.addEventListener('click', () => {
@@ -3093,11 +3116,13 @@
       leaderboard.classList.add('hidden');
       howto.classList.add('hidden');
       menu.classList.add('hidden');
+      updateTouchVisibility();
     });
 
     btnUpgradesBack.addEventListener('click', () => {
       upgrades.classList.add('hidden');
       menu.classList.remove('hidden');
+      updateTouchVisibility();
     });
 
     if (btnLeaderboard) {
@@ -3105,6 +3130,7 @@
         leaderboard.classList.remove('hidden');
         menu.classList.add('hidden');
         refreshLeaderboard();
+        updateTouchVisibility();
       });
     }
 
@@ -3112,6 +3138,7 @@
       btnLeaderboardBack.addEventListener('click', () => {
         leaderboard.classList.add('hidden');
         menu.classList.remove('hidden');
+        updateTouchVisibility();
       });
     }
 
@@ -3145,31 +3172,32 @@
       pause.classList.add('hidden');
       state.paused = false;
       menu.classList.remove('hidden');
+      updateTouchVisibility();
     });
 
     if (btnPause) {
       btnPause.addEventListener('click', () => {
         if (!state.running || state.gameOver || state.inMenu || state.inShop || state.inArtifact) return;
         setPaused(true);
+        updateTouchVisibility();
       });
     }
     if (btnResume) {
       btnResume.addEventListener('click', () => {
         if (!state.running || state.gameOver) return;
         setPaused(false);
+        updateTouchVisibility();
       });
     }
   }
 
   function setupTouch() {
-    const isTouch = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0)
+    isTouchDevice = (navigator.maxTouchPoints && navigator.maxTouchPoints > 0)
       || ('ontouchstart' in window)
       || window.matchMedia('(pointer: coarse)').matches;
     resetStick(moveJoystickThumb, moveJoystick);
     resetStick(aimJoystickThumb, aimJoystick);
-    if (isTouch) {
-      touchLayer.classList.remove('hidden');
-    }
+    updateTouchVisibility();
   }
 
   function createSprite(width, height, drawFn) {
