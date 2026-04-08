@@ -1795,6 +1795,7 @@
     const speed = enemy.projectileSpeed || 220;
     const spawnX = enemy.x + Math.cos(angle) * (enemy.r + 4);
     const spawnY = enemy.y + Math.sin(angle) * (enemy.r + 4);
+    const isBoneShot = enemy.type === 'Скелет-лучник' || enemy.type === 'Король костей';
     enemyProjectiles.push({
       x: spawnX,
       y: spawnY,
@@ -1802,13 +1803,17 @@
       vy: Math.sin(angle) * speed,
       damage: enemy.damage,
       life: 2.4,
-      r: 4,
-      tint: '#d8dde6',
+      r: isBoneShot ? 5 : 4,
+      tint: isBoneShot ? '#ffd27a' : '#d8dde6',
+      glow: isBoneShot ? 'rgba(255, 214, 122, 0.65)' : 'rgba(216, 221, 230, 0.35)',
+      trail: isBoneShot ? 'rgba(255, 232, 173, 0.5)' : 'rgba(216, 221, 230, 0.2)',
+      highlight: isBoneShot ? '#fff4c7' : '#eef2f8',
     });
-    spawnParticles(spawnX, spawnY, '#bfc7d5', 3, 60, 0.16, 2);
+    spawnParticles(spawnX, spawnY, isBoneShot ? '#ffe3a3' : '#bfc7d5', 3, 60, 0.16, 2);
   }
 
   function fireEnemyBurst(enemy, angle, count, spread, speed) {
+    const isBoneShot = enemy.type === 'Скелет-лучник' || enemy.type === 'Король костей';
     for (let i = 0; i < count; i++) {
       const offset = (i - (count - 1) / 2) * spread;
       const shotAngle = angle + offset;
@@ -1821,11 +1826,14 @@
         vy: Math.sin(shotAngle) * speed,
         damage: enemy.damage,
         life: 2.4,
-        r: 4,
-        tint: '#d8dde6',
+        r: isBoneShot ? 5 : 4,
+        tint: isBoneShot ? '#ffd27a' : '#d8dde6',
+        glow: isBoneShot ? 'rgba(255, 214, 122, 0.65)' : 'rgba(216, 221, 230, 0.35)',
+        trail: isBoneShot ? 'rgba(255, 232, 173, 0.5)' : 'rgba(216, 221, 230, 0.2)',
+        highlight: isBoneShot ? '#fff4c7' : '#eef2f8',
       });
     }
-    spawnParticles(enemy.x, enemy.y, '#d8dde6', 5, 90, 0.2, 2.5);
+    spawnParticles(enemy.x, enemy.y, isBoneShot ? '#ffe3a3' : '#d8dde6', 5, 90, 0.2, 2.5);
   }
 
   function fireRadialBurst(enemy, count, speed, damage = enemy.damage, color = '#d8dde6') {
@@ -2147,14 +2155,31 @@
   function drawEnemyProjectiles() {
     enemyProjectiles.forEach((projectile) => {
       const angle = Math.atan2(projectile.vy, projectile.vx);
+      const speed = Math.hypot(projectile.vx, projectile.vy);
+      const trailLength = clamp(speed * 0.03, 10, 22);
       ctx.save();
       ctx.translate(projectile.x, projectile.y);
       ctx.rotate(angle);
-      if (projectile.tint && projectile.tint !== '#d8dde6') {
+      ctx.globalAlpha = 0.95;
+      ctx.strokeStyle = projectile.trail || 'rgba(216, 221, 230, 0.2)';
+      ctx.lineWidth = projectile.r >= 5 ? 3.5 : 2.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-trailLength, 0);
+      ctx.lineTo(-DRAW.arrowW * 0.1, 0);
+      ctx.stroke();
+      ctx.shadowColor = projectile.glow || 'rgba(216, 221, 230, 0.35)';
+      ctx.shadowBlur = projectile.r >= 5 ? 16 : 8;
+      if (projectile.tint) {
         ctx.fillStyle = projectile.tint;
         ctx.fillRect(-DRAW.arrowW / 2, -DRAW.arrowH / 2, DRAW.arrowW, DRAW.arrowH);
       }
       ctx.drawImage(sprites.enemyArrow, -DRAW.arrowW / 2, -DRAW.arrowH / 2, DRAW.arrowW, DRAW.arrowH);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = projectile.highlight || '#eef2f8';
+      ctx.beginPath();
+      ctx.arc(DRAW.arrowW * 0.32, 0, projectile.r >= 5 ? 2.2 : 1.5, 0, Math.PI * 2);
+      ctx.fill();
       ctx.restore();
     });
   }
