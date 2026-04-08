@@ -223,11 +223,107 @@ h1, h2 { margin: 0 0 16px 0; font-weight: 700; }
 .hud-item span { font-size: 11px; color: var(--muted); }
 .hud-item strong { font-size: 16px; }
 
+.tester-panel {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 4;
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.tester-btn {
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  background: rgba(22, 24, 31, 0.92);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tester-btn.active {
+  border-color: rgba(255, 204, 0, 0.5);
+  background: rgba(70, 57, 17, 0.92);
+  color: #fff4cc;
+}
+
 .shop-items { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .shop-card { background: #262a33; padding: 12px; border-radius: 12px; text-align: left; display: flex; flex-direction: column; gap: 8px; }
 .shop-card h3 { margin: 0; font-size: 14px; }
 .shop-card p { margin: 0; font-size: 12px; color: var(--muted); }
 .shop-card button { width: 100%; margin-top: 6px; }
+
+.upgrades-panel {
+  width: min(760px, calc(100vw - 24px));
+  max-height: min(80vh, 720px);
+  overflow: auto;
+}
+
+.upgrade-guide {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.upgrade-guide-card {
+  padding: 14px;
+  border-radius: 12px;
+  background: #262a33;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+}
+
+.upgrade-guide-card h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.upgrade-guide-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.artifacts-panel {
+  width: min(860px, calc(100vw - 24px));
+}
+
+.artifact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.artifact-card {
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 204, 0, 0.18);
+  background: linear-gradient(180deg, #27211a, #211d19);
+  text-align: left;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+}
+
+.artifact-card h3 {
+  margin: 0 0 8px;
+  color: #ffe6a6;
+  font-size: 15px;
+}
+
+.artifact-card p {
+  margin: 0 0 12px;
+  color: #d9c9a2;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.artifact-card button {
+  margin-top: auto;
+}
 
 .death-stats { display: grid; gap: 8px; text-align: left; margin-bottom: 12px; }
 .death-quote { margin: 8px 0 16px; color: var(--muted); font-style: italic; }
@@ -236,16 +332,84 @@ h1, h2 { margin: 0 0 16px 0; font-weight: 700; }
 .touch-zone { position: absolute; top: 0; bottom: 0; width: 50%; pointer-events: auto; touch-action: none; }
 #touchLeft { left: 0; }
 #touchRight { right: 0; }
-.joystick { position: absolute; width: 120px; height: 120px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); pointer-events: none; }
-.joystick-thumb { position: absolute; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.35); left: 35px; top: 35px; }
-.shoot-hint { position: absolute; right: 12px; bottom: 20px; font-size: 12px; color: var(--muted); pointer-events: none; }
+
+.touch-stick {
+  position: absolute;
+  bottom: 24px;
+  width: 120px;
+  height: 120px;
+  pointer-events: none;
+}
+
+.touch-stick-left { left: 24px; }
+.touch-stick-right { right: 24px; }
+
+.joystick {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.24);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 45%, rgba(10,12,16,0.18) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+  pointer-events: none;
+}
+
+.joystick::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+}
+
+.joystick-thumb {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.24));
+  border: 1px solid rgba(255,255,255,0.22);
+  left: 35px;
+  top: 35px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
 
 @media (max-width: 720px) {
   .hud { flex-direction: column; gap: 8px; }
   .hud-left, .hud-right { justify-content: space-between; }
   .panel { margin: 16px; }
+  .tester-panel {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    flex-direction: column;
+  }
+  .touch-stick {
+    bottom: 18px;
+    width: 108px;
+    height: 108px;
+  }
+  .touch-stick-left { left: 18px; }
+  .touch-stick-right { right: 18px; }
+  .joystick-thumb {
+    width: 44px;
+    height: 44px;
+    left: 32px;
+    top: 32px;
+  }
   .choice-grid,
   .weapon-grid {
+    grid-template-columns: 1fr;
+  }
+  .upgrade-guide {
+    grid-template-columns: 1fr;
+  }
+  .artifact-grid {
     grid-template-columns: 1fr;
   }
   .wave-banner {

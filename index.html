@@ -37,6 +37,12 @@
       </div>
     </div>
 
+    <div id="testerPanel" class="tester-panel hidden">
+      <button id="btnGodMode" class="tester-btn">Бессмертие: OFF</button>
+      <button id="btnMegaDamage" class="tester-btn">Урон 9999: OFF</button>
+      <button id="btnInfiniteCoins" class="tester-btn">Монеты: OFF</button>
+    </div>
+
     <div id="menu" class="screen">
       <div class="panel">
         <h1>Стрелок Арены</h1>
@@ -81,6 +87,7 @@
         </div>
         <button id="btnStart" class="btn primary">Начать игру</button>
         <button id="btnHow" class="btn">Как играть</button>
+        <button id="btnUpgrades" class="btn">Улучшения</button>
       </div>
     </div>
 
@@ -88,13 +95,28 @@
       <div class="panel">
         <h2>Как играть</h2>
         <ul class="list">
-          <li>Движение: WASD или стрелки, на телефоне — перетаскивай палец.</li>
-          <li>Стрельба: клик мышью, на телефоне — тап по правой стороне. Перезарядка: R.</li>
-          <li>Волны бесконечны. После каждой волны — магазин.</li>
+          <li>Движение: WASD или стрелки, на телефоне левый джойстик.</li>
+          <li>Стрельба: мышь или правый джойстик на телефоне. Перезарядка: R.</li>
+          <li>Волны бесконечны. После каждой волны магазин.</li>
           <li>Таймер времени не останавливается.</li>
           <li>Игра заканчивается только при смерти.</li>
         </ul>
         <button id="btnBack" class="btn">Назад</button>
+      </div>
+    </div>
+
+    <div id="upgrades" class="screen hidden">
+      <div class="panel wide upgrades-panel">
+        <h2>Улучшения</h2>
+        <div id="upgradeGuide" class="upgrade-guide"></div>
+        <button id="btnUpgradesBack" class="btn">Назад</button>
+      </div>
+    </div>
+
+    <div id="artifacts" class="screen hidden">
+      <div class="panel wide artifacts-panel">
+        <h2 id="artifactTitle">Артефакт</h2>
+        <div id="artifactChoices" class="artifact-grid"></div>
       </div>
     </div>
 
@@ -126,10 +148,16 @@
     <div id="touch" class="touch hidden">
       <div id="touchLeft" class="touch-zone"></div>
       <div id="touchRight" class="touch-zone"></div>
-      <div id="joystick" class="joystick hidden">
-        <div id="joystickThumb" class="joystick-thumb"></div>
+      <div class="touch-stick touch-stick-left">
+        <div id="moveJoystick" class="joystick">
+          <div id="moveJoystickThumb" class="joystick-thumb"></div>
+        </div>
       </div>
-      <div id="shootHint" class="shoot-hint">Тап для выстрела</div>
+      <div class="touch-stick touch-stick-right">
+        <div id="aimJoystick" class="joystick">
+          <div id="aimJoystickThumb" class="joystick-thumb"></div>
+        </div>
+      </div>
     </div>
   </div>
 
