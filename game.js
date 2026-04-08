@@ -1029,6 +1029,11 @@
       && !state.gameOver
       && !state.paused;
     touchLayer.classList.toggle('hidden', !shouldShow);
+    touchLayer.style.pointerEvents = shouldShow ? 'auto' : 'none';
+    if (canvas) {
+      const gameplayActive = state.running && !state.inMenu && !state.inShop && !state.inArtifact && !state.gameOver;
+      canvas.style.pointerEvents = gameplayActive ? 'auto' : 'none';
+    }
   }
 
   function showInterstitial() {
