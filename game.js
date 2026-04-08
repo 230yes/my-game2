@@ -380,7 +380,8 @@
       tint: '#ffe066',
       minWave: 3,
       apply: (enemy) => {
-        enemy.speed *= 1.75;
+        const swiftMultiplier = enemy.type === 'Летучая мышь' ? 1.32 : 1.75;
+        enemy.speed *= swiftMultiplier;
         enemy.health = Math.max(1, Math.round(enemy.health * 0.95));
         enemy.maxHealth = enemy.health;
       },
@@ -841,13 +842,28 @@
   }
 
   function resetPlayer() {
-    player.x = worldWidth / 2;
-    player.y = worldHeight / 2;
+    player.x = clamp(worldWidth / 2, 32, worldWidth - 32);
+    player.y = clamp(worldHeight / 2, 32, worldHeight - 32);
     player.health = player.maxHealth;
     player.invuln = 0;
     player.reloading = false;
     player.reloadLeft = 0;
     player.ammo = player.clipSize;
+    inputs.up = false;
+    inputs.down = false;
+    inputs.left = false;
+    inputs.right = false;
+    inputs.shooting = false;
+    inputs.touchMove.active = false;
+    inputs.touchMove.id = null;
+    inputs.touchMove.dx = 0;
+    inputs.touchMove.dy = 0;
+    inputs.touchShoot.active = false;
+    inputs.touchShoot.id = null;
+    inputs.touchShoot.dx = 0;
+    inputs.touchShoot.dy = 0;
+    resetStick(moveJoystickThumb, moveJoystick);
+    resetStick(aimJoystickThumb, aimJoystick);
     inputs.lastShot = 0;
     // Avoid first-shot aiming to (0,0) if cursor/touch hasn't moved yet.
     inputs.mouseX = player.x;
@@ -870,6 +886,7 @@
     state.pendingArtifact = false;
     state.startTime = performance.now();
     state.elapsed = 0;
+    state.lastTime = 0;
 
     player.maxHealth = 100;
     player.health = 100;
@@ -1365,6 +1382,10 @@
     updateHud();
 
     if (!state.inShop && !state.inArtifact && !state.preparingWave && enemies.length === 0) {
+      if (!state.pendingArtifact && state.specialWaveType) {
+        const artifactChance = state.wave >= 10 ? 0.15 : 0.1;
+        state.pendingArtifact = Math.random() < artifactChance;
+      }
       if (state.pendingArtifact) {
         const title = state.bossWave ? 'Артефакт босса' : 'Редкий артефакт';
         openArtifactChoice(title);
@@ -1442,6 +1463,39 @@
     }
   }
 
+  function spawnChainLightning(baseDamage) {
+    const alive = enemies.filter((enemy) => enemy.health > 0);
+    if (!alive.length) return;
+    let current = alive.reduce((best, enemy) => {
+      const bestDist = best ? dist(inputs.mouseX, inputs.mouseY, best.x, best.y) : Infinity;
+      const enemyDist = dist(inputs.mouseX, inputs.mouseY, enemy.x, enemy.y);
+      return enemyDist < bestDist ? enemy : best;
+    }, null);
+    const hit = new Set();
+    for (let jump = 0; jump < 3 && current; jump++) {
+      current.health -= baseDamage;
+      hit.add(current);
+      spawnParticles(current.x, current.y, '#8ff7ff', 8, 90, 0.2, 2.3);
+      spawnFloatingText(current.x, current.y - 12, 'Молния', '#8ff7ff', 18, 0.35, 10);
+      let nextEnemy = null;
+      let nextDist = Infinity;
+      enemies.forEach((enemy) => {
+        if (hit.has(enemy) || enemy.health <= 0) return;
+        const d = dist(current.x, current.y, enemy.x, enemy.y);
+        if (d < 95 && d < nextDist) {
+          nextDist = d;
+          nextEnemy = enemy;
+        }
+      });
+      current = nextEnemy;
+    }
+    cleanupDeadEnemies();
+  }
+
+  function spawnToxicPuddle(x, y, radius = 26, life = 4.5) {
+    puddles.push({ x, y, radius, life, maxLife: life, tickTimer: 0.5 });
+  }
+
   function cleanupDeadEnemies() {
     for (let j = enemies.length - 1; j >= 0; j--) {
       if (enemies[j].health <= 0) {
@@ -1454,6 +1508,32 @@
     const e = enemies[index];
     enemies.splice(index, 1);
     state.kills += 1;
+
+    if (e.eliteType === 'explosive' || e.kamikaze) {
+      const blastDamage = Math.round(18 + state.wave * 0.35);
+      spawnParticles(e.x, e.y, '#ff8787', 12, 120, 0.28, 3.4);
+      if (!state.godMode && dist(e.x, e.y, player.x, player.y) <= 42 && player.invuln <= 0) {
+        player.health -= blastDamage;
+        player.invuln = 0.5;
+        flashDamage(0.65);
+        shakeScreen(0.18, 9);
+        spawnFloatingText(player.x, player.y - 18, `-${blastDamage}`, '#ff8787', 26, 0.55, 12);
+        if (player.health <= 0) {
+          die();
+          return;
+        }
+      }
+    }
+
+    if (e.eliteType === 'toxic') {
+      spawnToxicPuddle(e.x, e.y);
+    }
+
+    if (hasArtifact('vulture_heart')) {
+      const heal = e.boss ? 20 : e.elite ? 6 : 3;
+      player.health = Math.min(player.maxHealth, player.health + heal);
+    }
+
     spawnCoin(e.x, e.y, e.reward);
     spawnFloatingText(e.x, e.y - 10, e.type, '#8ce99a', 20, 0.6, 10);
     spawnParticles(e.x, e.y, '#8ce99a', 7, 120, 0.35, 3);
@@ -1464,6 +1544,28 @@
       const coinX = clamp(x + rand(-12, 12), 20, worldWidth - 20);
       const coinY = clamp(y + rand(-12, 12), 20, worldHeight - 20);
       coins.push({ x: coinX, y: coinY, r: 4, value: 1 });
+    }
+  }
+
+  function updatePuddles(delta) {
+    for (let i = puddles.length - 1; i >= 0; i--) {
+      const puddle = puddles[i];
+      puddle.life -= delta;
+      puddle.tickTimer -= delta;
+      if (puddle.life <= 0) {
+        puddles.splice(i, 1);
+        continue;
+      }
+      if (!state.godMode && dist(puddle.x, puddle.y, player.x, player.y) <= puddle.radius + player.r && puddle.tickTimer <= 0) {
+        puddle.tickTimer = 0.5;
+        player.health -= 4;
+        flashDamage(0.35);
+        spawnFloatingText(player.x, player.y - 18, '-4', '#94d82d', 18, 0.4, 10);
+        if (player.health <= 0) {
+          die();
+          return;
+        }
+      }
     }
   }
 
@@ -1479,6 +1581,13 @@
       }
       if (d < 16) {
         state.coins += c.value;
+        if (hasArtifact('gold_vein') && Math.random() < 0.2) {
+          state.coins += 1;
+          spawnFloatingText(c.x, c.y - 14, '+1 бонус', '#ffe066', 16, 0.35, 9);
+        }
+        if (hasArtifact('magnet_seal')) {
+          artifactRuntime.speedBoostTimer = 1.5;
+        }
         spawnFloatingText(c.x, c.y - 4, `+${c.value}`, '#ffde59', 18, 0.45, 10);
         coins.splice(i, 1);
       }
@@ -1490,6 +1599,24 @@
       const e = enemies[i];
       const angle = Math.atan2(player.y - e.y, player.x - e.x);
       const distanceToPlayer = dist(e.x, e.y, player.x, player.y);
+      if (e.eliteType === 'healer') {
+        e.healCooldown = Math.max(0, (e.healCooldown || 0) - delta);
+        if (e.healCooldown <= 0) {
+          const nearby = enemies
+            .filter((enemy) => enemy !== e && dist(e.x, e.y, enemy.x, enemy.y) <= 90)
+            .sort((a, b) => dist(e.x, e.y, a.x, a.y) - dist(e.x, e.y, b.x, b.y))
+            .slice(0, 2);
+          nearby.forEach((ally) => {
+            const healAmount = Math.max(1, Math.round(ally.maxHealth * 0.06));
+            ally.health = Math.min(ally.maxHealth, ally.health + healAmount);
+            spawnFloatingText(ally.x, ally.y - 18, `+${healAmount}`, '#74c0fc', 18, 0.35, 10);
+          });
+          if (nearby.length) {
+            spawnParticles(e.x, e.y, '#74c0fc', 7, 80, 0.22, 2.3);
+          }
+          e.healCooldown = 2.8;
+        }
+      }
       if (e.boss) {
         updateBossBehavior(e, angle, distanceToPlayer, delta);
       } else if (e.ranged) {
@@ -1822,6 +1949,7 @@
     );
 
     drawArena();
+    drawPuddles();
     drawCoins();
     drawArrows();
     drawEnemyProjectiles();
@@ -1861,6 +1989,21 @@
     ctx.fillStyle = theme.glow;
     ctx.fillRect(worldWidth / 2 - 3, worldHeight / 2 - 18, 6, 36);
     ctx.fillRect(worldWidth / 2 - 18, worldHeight / 2 - 3, 36, 6);
+  }
+
+  function drawPuddles() {
+    puddles.forEach((puddle) => {
+      const alpha = clamp(puddle.life / puddle.maxLife, 0, 1) * 0.5;
+      ctx.save();
+      ctx.fillStyle = `rgba(122, 191, 54, ${alpha})`;
+      ctx.beginPath();
+      ctx.arc(puddle.x, puddle.y, puddle.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(183, 255, 125, ${alpha})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    });
   }
 
   function isPlayerMoving() {
@@ -1930,7 +2073,14 @@
         if (e.type === 'Око бури' && sprites.batBossWalk) sprite = sprites.batBossWalk[frame];
         if (e.type === 'Рыцарь пустоты' && sprites.voidKnightBossWalk) sprite = sprites.voidKnightBossWalk[frame];
       const size = e.boss ? DRAW.enemy * 1.6 : DRAW.enemy;
+      if (e.invisible) {
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+      }
       ctx.drawImage(sprite, e.x - size / 2, e.y - size / 2, size, size);
+      if (e.invisible) {
+        ctx.restore();
+      }
 
       if (e.ranged) {
         const aimAngle = Math.atan2(player.y - e.y, player.x - e.x);
@@ -1957,6 +2107,19 @@
 
         ctx.fillStyle = pct > 0.5 ? '#44c06f' : pct > 0.2 ? '#ffcc00' : '#ff4d4d';
         ctx.fillRect(x, y, Math.max(0, Math.floor(barW * pct)), barH);
+      }
+
+      if (e.elite) {
+        ctx.save();
+        ctx.strokeStyle = e.eliteColor || '#ffe066';
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.85;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, size * 0.38 + Math.sin(performance.now() / 130) * 1.4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = e.eliteTint || e.eliteColor || '#ffe066';
+        ctx.fillRect(e.x - 5, e.y - size / 2 - 10, 10, 3);
+        ctx.restore();
       }
 
       if (e.boss) {
@@ -2041,7 +2204,7 @@
   }
 
   function drawCrosshair() {
-    if (state.inMenu || state.inShop || state.gameOver) return;
+    if (state.inMenu || state.inShop || state.inArtifact || state.gameOver) return;
     const x = clamp(inputs.mouseX, 0, worldWidth);
     const y = clamp(inputs.mouseY, 0, worldHeight);
     const pulse = 1 + Math.sin(performance.now() / 120) * 0.08;
@@ -2406,6 +2569,8 @@
     btnStart.addEventListener('click', () => {
       menu.classList.add('hidden');
       howto.classList.add('hidden');
+      upgrades.classList.add('hidden');
+      artifacts.classList.add('hidden');
       death.classList.add('hidden');
       shop.classList.add('hidden');
       hud.classList.remove('hidden');
@@ -2440,6 +2605,7 @@
 
     btnRestart.addEventListener('click', () => {
       death.classList.add('hidden');
+      artifacts.classList.add('hidden');
       hud.classList.remove('hidden');
       resetGame();
     });
@@ -2451,6 +2617,7 @@
       bossHud.classList.add('hidden');
       testerPanel.classList.add('hidden');
       upgrades.classList.add('hidden');
+      artifacts.classList.add('hidden');
       howto.classList.add('hidden');
       menu.classList.remove('hidden');
     });
