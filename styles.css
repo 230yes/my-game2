@@ -14,6 +14,8 @@ html, body {
   padding: 0;
   width: 100%;
   height: 100%;
+  min-height: 100vh;
+  min-height: 100svh;
   background: var(--bg);
   color: var(--text);
   font-family: "Courier New", Courier, monospace;
@@ -26,7 +28,7 @@ html, body {
 }
 body { overflow: hidden; }
 
-#app { position: relative; width: 100%; height: 100%; }
+#app { position: relative; width: 100%; height: 100%; min-height: 100vh; min-height: 100svh; }
 #game {
   position: absolute;
   inset: 0;
@@ -152,11 +154,14 @@ body { overflow: hidden; }
   background: rgba(10, 11, 15, 0.85);
   backdrop-filter: blur(4px);
   z-index: 5;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .hidden { display: none !important; }
 
-.panel { background: var(--panel); padding: 24px; border-radius: 16px; min-width: 280px; max-width: 420px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-.panel.wide { max-width: 640px; }
+.panel { background: var(--panel); padding: 24px; border-radius: 16px; min-width: 280px; max-width: 420px; width: min(92vw, 420px); text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90svh; overflow: auto; }
+.panel.wide { max-width: 640px; width: min(94vw, 640px); }
 
 .choice-group {
   margin: 16px 0;
@@ -374,7 +379,8 @@ h1, h2 { margin: 0 0 16px 0; font-weight: 700; }
 @media (max-width: 720px) {
   .hud { flex-direction: column; gap: 8px; }
   .hud-left, .hud-right { justify-content: space-between; }
-  .panel { margin: 16px; }
+  .panel { margin: 16px; width: min(94vw, 560px); }
+  .panel.wide { width: min(96vw, 720px); }
   .touch-stick {
     bottom: 18px;
     width: 108px;
@@ -390,6 +396,9 @@ h1, h2 { margin: 0 0 16px 0; font-weight: 700; }
   }
   .choice-grid,
   .weapon-grid {
+    grid-template-columns: 1fr;
+  }
+  .shop-items {
     grid-template-columns: 1fr;
   }
   .upgrade-guide {
