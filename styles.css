@@ -421,6 +421,14 @@ h1, h2 { margin: 0 0 16px 0; font-weight: 700; }
   }
 }
 
+@media (max-height: 640px) {
+  .screen { align-items: flex-start; }
+  .panel { margin: 12px; padding: 16px; max-height: calc(100svh - 24px); }
+  .panel.wide { max-height: calc(100svh - 24px); }
+  .choice-group { margin: 10px 0; }
+  .btn { padding: 10px 12px; }
+}
+
 .leaderboard {
   margin: 12px 0;
   text-align: left;
