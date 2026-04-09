@@ -831,6 +831,11 @@
     viewOffsetY = Math.floor((height - BASE_HEIGHT * viewScale) / 2);
   }
 
+  function updateViewportUnit() {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+  }
+
   function formatTime(seconds) {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -3817,6 +3822,7 @@
   }
 
   function init() {
+    updateViewportUnit();
     resize();
     createSprites();
     readRecord();
@@ -3838,7 +3844,10 @@
         setPaused(true);
       }
     });
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', () => {
+      updateViewportUnit();
+      resize();
+    });
     requestAnimationFrame(loop);
   }
 

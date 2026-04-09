@@ -14,8 +14,7 @@ html, body {
   padding: 0;
   width: 100%;
   height: 100%;
-  min-height: 100vh;
-  min-height: 100svh;
+  min-height: calc(var(--vh, 1vh) * 100);
   background: var(--bg);
   color: var(--text);
   font-family: "Courier New", Courier, monospace;
@@ -28,7 +27,7 @@ html, body {
 }
 body { overflow: hidden; }
 
-#app { position: relative; width: 100%; height: 100%; min-height: 100vh; min-height: 100svh; }
+#app { position: relative; width: 100%; height: 100%; min-height: calc(var(--vh, 1vh) * 100); }
 #game {
   position: absolute;
   inset: 0;
@@ -160,7 +159,7 @@ body { overflow: hidden; }
 }
 .hidden { display: none !important; }
 
-.panel { background: var(--panel); padding: 24px; border-radius: 16px; min-width: 280px; max-width: 420px; width: min(92vw, 420px); text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: 90svh; overflow: auto; }
+.panel { background: var(--panel); padding: 24px; border-radius: 16px; min-width: 280px; max-width: 420px; width: min(92vw, 420px); text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-height: calc(var(--vh, 1vh) * 90); overflow: auto; }
 .panel.wide { max-width: 640px; width: min(94vw, 640px); }
 
 .choice-group {
@@ -377,10 +376,11 @@ h1, h2 { margin: 0 0 16px 0; font-weight: 700; }
 }
 
 @media (max-width: 720px) {
+  .screen { align-items: flex-start; }
   .hud { flex-direction: column; gap: 8px; }
   .hud-left, .hud-right { justify-content: space-between; }
-  .panel { margin: 16px; width: min(94vw, 560px); }
-  .panel.wide { width: min(96vw, 720px); }
+  .panel { margin: 12px; padding: 16px; width: min(96vw, 560px); max-height: calc(var(--vh, 1vh) * 100 - 24px); }
+  .panel.wide { width: min(98vw, 720px); max-height: calc(var(--vh, 1vh) * 100 - 24px); }
   .touch-stick {
     bottom: 18px;
     width: 108px;
@@ -423,8 +423,8 @@ h1, h2 { margin: 0 0 16px 0; font-weight: 700; }
 
 @media (max-height: 640px) {
   .screen { align-items: flex-start; }
-  .panel { margin: 12px; padding: 16px; max-height: calc(100svh - 24px); }
-  .panel.wide { max-height: calc(100svh - 24px); }
+  .panel { margin: 10px; padding: 14px; max-height: calc(var(--vh, 1vh) * 100 - 20px); }
+  .panel.wide { max-height: calc(var(--vh, 1vh) * 100 - 20px); }
   .choice-group { margin: 10px 0; }
   .btn { padding: 10px 12px; }
 }
