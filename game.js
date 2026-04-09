@@ -2380,6 +2380,8 @@
     state.paused = false;
     pause.classList.add('hidden');
     updateTouchVisibility();
+    effects.shakeTime = 0;
+    effects.shakeStrength = 0;
 
     const elapsed = state.elapsed;
     if (elapsed > state.record) {

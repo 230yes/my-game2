@@ -221,7 +221,7 @@ h1, h2 { margin: 0 0 16px 0; font-weight: 700; }
 .list { text-align: left; margin: 0; padding-left: 18px; color: var(--muted); }
 .list li { margin-bottom: 8px; }
 
-.hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; z-index: 3; pointer-events: none; }
+.hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; z-index: 6; pointer-events: none; }
 .hud-left, .hud-right { display: flex; gap: 12px; }
 .hud-item { background: rgba(25, 28, 36, 0.8); padding: 8px 12px; border-radius: 10px; display: flex; flex-direction: column; gap: 2px; min-width: 90px; text-align: center; }
 .hud-item span { font-size: 11px; color: var(--muted); }
