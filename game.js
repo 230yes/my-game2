@@ -42,6 +42,9 @@
   const btnLeaderboardBack = document.getElementById('btnLeaderboardBack');
   const btnPause = document.getElementById('btnPause');
   const btnResume = document.getElementById('btnResume');
+  const btnSound = document.getElementById('btnSound');
+  const btnSoundPause = document.getElementById('btnSoundPause');
+  const btnFullscreen = document.getElementById('btnFullscreen');
   const arenaChoices = document.getElementById('arenaChoices');
   const weaponChoices = document.getElementById('weaponChoices');
 
@@ -909,6 +912,12 @@
       btn_pause: 'Пауза',
       boss_name: 'Босс',
       reload_label: 'Перезарядка',
+      btn_sound_on: 'Звук: Вкл',
+      btn_sound_off: 'Звук: Выкл',
+      btn_fullscreen: 'Полный экран',
+      btn_fullscreen_exit: 'Выйти из полного экрана',
+      btn_buy: 'Купить',
+      price_label: 'Цена:',
       auth_unavailable: 'Авторизация станет доступна после публикации в Яндекс Играх. Сейчас можно играть гостем.',
       ads_unavailable: 'Реклама станет доступна после публикации в Яндекс Играх.',
     },
@@ -978,6 +987,12 @@
       btn_pause: 'Pause',
       boss_name: 'Boss',
       reload_label: 'Reloading',
+      btn_sound_on: 'Sound: On',
+      btn_sound_off: 'Sound: Off',
+      btn_fullscreen: 'Fullscreen',
+      btn_fullscreen_exit: 'Exit fullscreen',
+      btn_buy: 'Buy',
+      price_label: 'Price:',
       auth_unavailable: 'Sign‑in will be available after publishing on Yandex Games. You can play as guest.',
       ads_unavailable: 'Ads will be available after publishing on Yandex Games.',
     },
@@ -997,8 +1012,159 @@
       if (!key) return;
       el.textContent = t(key);
     });
+    updateSoundButtons();
+    updateFullscreenButton();
     localizeUpgradesAndArtifacts();
     renderUpgradeGuide();
+  }
+
+  function updateSoundButtons() {
+    const label = soundEnabled ? t('btn_sound_on') : t('btn_sound_off');
+    if (btnSound) btnSound.textContent = label;
+    if (btnSoundPause) btnSoundPause.textContent = label;
+  }
+
+  function loadSoundSettings() {
+    const raw = localStorage.getItem('arena_sound_enabled');
+    if (raw === '0') soundEnabled = false;
+  }
+
+  function saveSoundSettings() {
+    localStorage.setItem('arena_sound_enabled', soundEnabled ? '1' : '0');
+  }
+
+  function unlockAudio() {
+    if (!soundEnabled) return;
+    if (!audioCtx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      audioCtx = new AudioContext();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    audioUnlocked = true;
+  }
+
+  function setSoundPaused(paused) {
+    if (!audioCtx) return;
+    if (paused) {
+      if (audioCtx.state === 'running') {
+        audioCtx.suspend();
+      }
+    } else if (soundEnabled) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+  }
+
+  function playTone(freq, duration, type = 'sine', volume = 0.05) {
+    if (!soundEnabled) return;
+    if (!audioCtx || !audioUnlocked) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + duration + 0.02);
+  }
+
+  function playSweep(startFreq, endFreq, duration, type = 'sine', volume = 0.05) {
+    if (!soundEnabled) return;
+    if (!audioCtx || !audioUnlocked) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(startFreq, now);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), now + duration);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + duration + 0.02);
+  }
+
+  function playNoise(duration = 0.12, volume = 0.04, hp = 400, lp = 8000) {
+    if (!soundEnabled) return;
+    if (!audioCtx || !audioUnlocked) return;
+    const now = audioCtx.currentTime;
+    const bufferSize = Math.max(1, Math.floor(audioCtx.sampleRate * duration));
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1);
+    }
+    const src = audioCtx.createBufferSource();
+    src.buffer = buffer;
+    const band = audioCtx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.setValueAtTime((hp + lp) * 0.5, now);
+    band.Q.setValueAtTime(0.9, now);
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    src.connect(band);
+    band.connect(gain);
+    gain.connect(audioCtx.destination);
+    src.start(now);
+    src.stop(now + duration + 0.02);
+  }
+
+  function playSound(key) {
+    const now = performance.now();
+    const last = lastSoundTimes[key] || 0;
+    if (now - last < 60) return;
+    lastSoundTimes[key] = now;
+    switch (key) {
+      case 'click':
+        playTone(520 + Math.random() * 60, 0.04, 'square', 0.035);
+        break;
+      case 'shoot':
+        playSweep(900 + Math.random() * 120, 240, 0.08, 'square', 0.03);
+        break;
+      case 'hit':
+        playNoise(0.1, 0.05, 200, 1200);
+        playSweep(180, 80, 0.12, 'sawtooth', 0.03);
+        break;
+      case 'coin':
+        playTone(880, 0.07, 'triangle', 0.04);
+        playTone(1320, 0.05, 'triangle', 0.03);
+        break;
+      case 'wave':
+        playTone(420, 0.2, 'sine', 0.04);
+        playTone(630, 0.2, 'sine', 0.03);
+        break;
+      case 'death':
+        playSweep(220, 60, 0.5, 'sawtooth', 0.05);
+        playNoise(0.2, 0.03, 120, 600);
+        break;
+      case 'shop':
+        playTone(260, 0.08, 'triangle', 0.03);
+        playTone(360, 0.08, 'triangle', 0.03);
+        playTone(520, 0.08, 'triangle', 0.03);
+        break;
+      case 'boss_spawn':
+        playSweep(520, 120, 0.45, 'sawtooth', 0.05);
+        playTone(220, 0.25, 'triangle', 0.04);
+        break;
+      case 'boss_death':
+        playSweep(260, 70, 0.6, 'sawtooth', 0.05);
+        playNoise(0.25, 0.035, 120, 600);
+        break;
+      default:
+        break;
+    }
   }
 
   function enterFullscreen() {
@@ -1009,6 +1175,22 @@
     if (request) {
       try { request.call(el); } catch (e) { /* ignore */ }
     }
+  }
+
+  function exitFullscreen() {
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+      if (exit) {
+        try { exit.call(document); } catch (e) { /* ignore */ }
+      }
+    }
+  }
+
+  function updateFullscreenButton() {
+    if (!btnFullscreen) return;
+    const isFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+    const key = isFs ? 'btn_fullscreen_exit' : 'btn_fullscreen';
+    btnFullscreen.textContent = t(key);
   }
 
   function setPaused(next) {
@@ -1100,6 +1282,10 @@
   let playerName = '';
   let playerId = '';
   let currentLang = 'ru';
+  let audioCtx = null;
+  let audioUnlocked = false;
+  let soundEnabled = true;
+  let lastSoundTimes = {};
 
   const LEADERBOARDS = {
     time: { name: 'archer_time', type: 'time' },
@@ -1431,6 +1617,7 @@
       state.lastWaveWasSpecial = false;
       state.pendingArtifact = true;
       spawnBossWave();
+      playSound('wave');
       return;
     }
 
@@ -1445,6 +1632,7 @@
     let elitesSpawned = 0;
 
     showWaveBanner(chosenSpecial ? chosenSpecial.banner : `Волна ${state.wave}`);
+    playSound('wave');
 
     for (let i = 0; i < count; i++) {
       const allTypes = enemyTypes.filter((type) => state.wave >= (type.minWave || 1));
@@ -1470,6 +1658,7 @@
     const bossType = bossTypes[Math.floor(Math.random() * bossTypes.length)];
     showWaveBanner(`Босс: ${bossType.name}`);
     enemies.push(createBoss(bossType));
+    playSound('boss_spawn');
   }
 
   function rollEnemyType() {
@@ -1637,6 +1826,7 @@
     shop.classList.remove('hidden');
     shopItems.innerHTML = '';
     updateTouchVisibility();
+    playSound('shop');
 
     const options = pickUpgrades();
     options.forEach((opt) => {
@@ -1646,14 +1836,15 @@
       card.innerHTML = `
         <h3>${opt.name}</h3>
         <p>${opt.desc}</p>
-        <p>Цена: ${cost}</p>
+        <p>${t('price_label')} ${cost}</p>
       `;
       const btn = document.createElement('button');
       btn.className = 'btn';
-      btn.textContent = 'Купить';
+      btn.textContent = t('btn_buy');
       btn.disabled = !false && state.coins < cost;
       btn.addEventListener('click', () => {
         if (!false && state.coins < cost) return;
+        playSound('click');
         if (!false) state.coins -= cost;
         opt.apply();
         upgradeLevels[opt.id] = (upgradeLevels[opt.id] || 0) + 1;
@@ -1743,6 +1934,7 @@
     const interval = 1000 / effectiveFireRate;
     if (now - inputs.lastShot < interval) return;
     inputs.lastShot = now;
+    playSound('shoot');
 
     if (player.reloading) return;
     if (player.ammo <= 0) {
@@ -1973,6 +2165,9 @@
     const e = enemies[index];
     enemies.splice(index, 1);
     state.kills += 1;
+    if (e.boss) {
+      playSound('boss_death');
+    }
 
     if (e.eliteType === 'explosive' || e.kamikaze) {
       const blastDamage = Math.round(18 + state.wave * 0.35);
@@ -1983,10 +2178,10 @@
         flashDamage(0.65);
         shakeScreen(0.18, 9);
         spawnFloatingText(player.x, player.y - 18, `-${blastDamage}`, '#ff8787', 26, 0.55, 12);
-        if (player.health <= 0) {
-          die();
-          return;
-        }
+    if (player.health <= 0) {
+      die();
+      return;
+    }
       }
     }
 
@@ -2055,6 +2250,7 @@
         }
         spawnFloatingText(c.x, c.y - 4, `+${c.value}`, '#ffde59', 18, 0.45, 10);
         coins.splice(i, 1);
+        playSound('coin');
       }
     }
   }
@@ -2355,6 +2551,7 @@
         enemyProjectiles.splice(i, 1);
         if (false || player.invuln > 0) continue;
         player.health -= projectile.damage;
+        playSound('hit');
         player.invuln = 0.5;
         flashDamage(0.6);
         shakeScreen(0.14, 6);
@@ -2387,6 +2584,7 @@
     updateTouchVisibility();
     effects.shakeTime = 0;
     effects.shakeStrength = 0;
+    playSound('death');
 
     const elapsed = state.elapsed;
     if (elapsed > state.record) {
@@ -2962,6 +3160,7 @@
 
     const onLeftTouchStart = (e) => {
       e.preventDefault();
+      unlockAudio();
       const t = e.changedTouches[0];
       if (!t) return;
       inputs.touchMove.active = true;
@@ -2992,6 +3191,7 @@
 
     const onRightTouchStart = (e) => {
       e.preventDefault();
+      unlockAudio();
       const t = e.changedTouches[0];
       if (!t) return;
       inputs.touchShoot.active = true;
@@ -3052,6 +3252,8 @@
     if (btnEnter) {
       btnEnter.addEventListener('click', async () => {
         enterFullscreen();
+        unlockAudio();
+        playSound('click');
         if (!ysdk?.auth?.openAuthDialog) {
           if (startNote) {
             startNote.textContent = t('auth_unavailable');
@@ -3072,7 +3274,9 @@
     if (btnGuest) {
       btnGuest.addEventListener('click', () => {
         enterFullscreen();
+        unlockAudio();
         showMenu();
+        playSound('click');
       });
     }
 
@@ -3095,6 +3299,8 @@
 
     btnStart.addEventListener('click', () => {
       enterFullscreen();
+      unlockAudio();
+      playSound('click');
       menu.classList.add('hidden');
       howto.classList.add('hidden');
       upgrades.classList.add('hidden');
@@ -3110,6 +3316,7 @@
     });
 
     btnHow.addEventListener('click', () => {
+      playSound('click');
       howto.classList.remove('hidden');
       leaderboard.classList.add('hidden');
       upgrades.classList.add('hidden');
@@ -3118,12 +3325,14 @@
     });
 
     btnBack.addEventListener('click', () => {
+      playSound('click');
       howto.classList.add('hidden');
       menu.classList.remove('hidden');
       updateTouchVisibility();
     });
 
     btnUpgrades.addEventListener('click', () => {
+      playSound('click');
       upgrades.classList.remove('hidden');
       leaderboard.classList.add('hidden');
       howto.classList.add('hidden');
@@ -3132,6 +3341,7 @@
     });
 
     btnUpgradesBack.addEventListener('click', () => {
+      playSound('click');
       upgrades.classList.add('hidden');
       menu.classList.remove('hidden');
       updateTouchVisibility();
@@ -3139,6 +3349,7 @@
 
     if (btnLeaderboard) {
       btnLeaderboard.addEventListener('click', () => {
+        playSound('click');
         leaderboard.classList.remove('hidden');
         menu.classList.add('hidden');
         refreshLeaderboard();
@@ -3148,6 +3359,7 @@
 
     if (btnLeaderboardBack) {
       btnLeaderboardBack.addEventListener('click', () => {
+        playSound('click');
         leaderboard.classList.add('hidden');
         menu.classList.remove('hidden');
         updateTouchVisibility();
@@ -3155,16 +3367,19 @@
     }
 
     btnShopContinue.addEventListener('click', () => {
+      playSound('click');
       closeShop();
     });
 
     if (btnReward) {
       btnReward.addEventListener('click', () => {
+        playSound('click');
         showRewarded(20);
       });
     }
 
     btnRestart.addEventListener('click', () => {
+      playSound('click');
       death.classList.add('hidden');
       artifacts.classList.add('hidden');
       hud.classList.remove('hidden');
@@ -3172,6 +3387,7 @@
     });
 
     btnMenu.addEventListener('click', () => {
+      playSound('click');
       refreshLeaderboard();
       death.classList.add('hidden');
       hud.classList.add('hidden');
@@ -3190,6 +3406,7 @@
     if (btnPause) {
       btnPause.addEventListener('click', () => {
         if (!state.running || state.gameOver || state.inMenu || state.inShop || state.inArtifact) return;
+        playSound('click');
         setPaused(true);
         updateTouchVisibility();
       });
@@ -3197,8 +3414,49 @@
     if (btnResume) {
       btnResume.addEventListener('click', () => {
         if (!state.running || state.gameOver) return;
+        playSound('click');
         setPaused(false);
         updateTouchVisibility();
+      });
+    }
+    if (btnSound) {
+      btnSound.addEventListener('click', () => {
+        unlockAudio();
+        soundEnabled = !soundEnabled;
+        saveSoundSettings();
+        updateSoundButtons();
+        if (!soundEnabled) {
+          setSoundPaused(true);
+        } else {
+          setSoundPaused(false);
+        }
+        playSound('click');
+      });
+    }
+    if (btnSoundPause) {
+      btnSoundPause.addEventListener('click', () => {
+        unlockAudio();
+        soundEnabled = !soundEnabled;
+        saveSoundSettings();
+        updateSoundButtons();
+        if (!soundEnabled) {
+          setSoundPaused(true);
+        } else {
+          setSoundPaused(false);
+        }
+        playSound('click');
+      });
+    }
+    if (btnFullscreen) {
+      btnFullscreen.addEventListener('click', () => {
+        unlockAudio();
+        playSound('click');
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          exitFullscreen();
+        } else {
+          enterFullscreen();
+        }
+        updateFullscreenButton();
       });
     }
   }
@@ -3826,6 +4084,7 @@
     resize();
     createSprites();
     readRecord();
+    loadSoundSettings();
     applyLanguage(currentLang);
     initSDK();
     renderUpgradeGuide();
@@ -3838,16 +4097,27 @@
       if (document.hidden && state.running && !state.gameOver) {
         setPaused(true);
       }
+      if (document.hidden) {
+        setSoundPaused(true);
+      } else {
+        setSoundPaused(false);
+      }
     });
     window.addEventListener('blur', () => {
       if (state.running && !state.gameOver) {
         setPaused(true);
       }
+      setSoundPaused(true);
+    });
+    window.addEventListener('focus', () => {
+      setSoundPaused(false);
     });
     window.addEventListener('resize', () => {
       updateViewportUnit();
       resize();
     });
+    document.addEventListener('fullscreenchange', updateFullscreenButton);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
     requestAnimationFrame(loop);
   }
 
