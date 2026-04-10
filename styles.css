@@ -185,6 +185,10 @@ body { overflow: hidden; }
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.language-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .choice-card {
   display: flex;
   flex-direction: column;

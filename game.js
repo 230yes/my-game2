@@ -45,6 +45,7 @@
   const btnSound = document.getElementById('btnSound');
   const btnSoundPause = document.getElementById('btnSoundPause');
   const btnFullscreen = document.getElementById('btnFullscreen');
+  const languageChoices = document.getElementById('languageChoices');
   const arenaChoices = document.getElementById('arenaChoices');
   const weaponChoices = document.getElementById('weaponChoices');
 
@@ -524,48 +525,60 @@
     {
       id: 'blood_bolt',
       name: 'Кровавый затвор',
+      nameRu: 'Кровавый затвор',
       nameEn: 'Blood Bolt',
       desc: 'Чем меньше здоровья, тем быстрее стрельба. На низком HP почти вдвое быстрее.',
+      descRu: 'Чем меньше здоровья, тем быстрее стрельба. На низком HP почти вдвое быстрее.',
       descEn: 'Lower health means faster fire rate. At low HP it is almost doubled.',
       apply: () => { state.artifacts.push('blood_bolt'); },
     },
     {
       id: 'vulture_heart',
       name: 'Сердце стервятника',
+      nameRu: 'Сердце стервятника',
       nameEn: 'Vulture Heart',
       desc: 'Каждое убийство лечит: обычный враг +3 HP, элита +6 HP, босс +20 HP.',
+      descRu: 'Каждое убийство лечит: обычный враг +3 HP, элита +6 HP, босс +20 HP.',
       descEn: 'Each kill heals: normal +3 HP, elite +6 HP, boss +20 HP.',
       apply: () => { state.artifacts.push('vulture_heart'); },
     },
     {
       id: 'storm_trace',
       name: 'Грозовой след',
+      nameRu: 'Грозовой след',
       nameEn: 'Storm Trace',
       desc: 'Каждая пятая атака вызывает цепную молнию, бьющую по 3 целям.',
+      descRu: 'Каждая пятая атака вызывает цепную молнию, бьющую по 3 целям.',
       descEn: 'Every fifth attack triggers chain lightning hitting 3 targets.',
       apply: () => { state.artifacts.push('storm_trace'); },
     },
     {
       id: 'magnet_seal',
       name: 'Магнитная печать',
+      nameRu: 'Магнитная печать',
       nameEn: 'Magnet Seal',
       desc: 'Сильнее тянет монеты. Подбор монеты даёт +15% скорости на 1,5 секунды.',
+      descRu: 'Сильнее тянет монеты. Подбор монеты даёт +15% скорости на 1,5 секунды.',
       descEn: 'Stronger coin pull. Picking a coin gives +15% speed for 1.5s.',
       apply: () => { state.artifacts.push('magnet_seal'); },
     },
     {
       id: 'shop_echo',
       name: 'Эхо магазина',
+      nameRu: 'Эхо магазина',
       nameEn: 'Shop Echo',
       desc: 'После перезарядки первый выстрел наносит на 60% больше урона.',
+      descRu: 'После перезарядки первый выстрел наносит на 60% больше урона.',
       descEn: 'After reloading, the first shot deals 60% more damage.',
       apply: () => { state.artifacts.push('shop_echo'); },
     },
     {
       id: 'gold_vein',
       name: 'Золотая жилка',
+      nameRu: 'Золотая жилка',
       nameEn: 'Gold Vein',
       desc: 'При подборе монеты есть 20% шанс получить ещё +1 сверху.',
+      descRu: 'При подборе монеты есть 20% шанс получить ещё +1 сверху.',
       descEn: 'Picking a coin has a 20% chance to grant +1 extra.',
       apply: () => { state.artifacts.push('gold_vein'); },
     },
@@ -742,8 +755,8 @@
         artifact.name = artifact.nameEn || artifact.name;
         artifact.desc = artifact.descEn || artifact.desc;
       } else {
-        artifact.name = artifact.name;
-        artifact.desc = artifact.desc;
+        artifact.name = artifact.nameRu || artifact.name;
+        artifact.desc = artifact.descRu || artifact.desc;
       }
     });
   }
@@ -774,7 +787,7 @@
 
   function getArtifactChoices() {
     const available = artifactCatalog.filter((artifact) => !hasArtifact(artifact.id));
-    const pool = available.length >= 3 ? [...available] : [...artifactCatalog];
+    const pool = [...available];
     const picks = [];
     while (picks.length < Math.min(3, pool.length)) {
       const idx = Math.floor(Math.random() * pool.length);
@@ -784,11 +797,18 @@
   }
 
   function openArtifactChoice(title = 'Выбор артефакта') {
+    const picks = getArtifactChoices();
+    if (!picks.length) {
+      state.pendingArtifact = false;
+      state.inArtifact = false;
+      artifacts.classList.add('hidden');
+      openShop();
+      return;
+    }
     state.inArtifact = true;
     artifacts.classList.remove('hidden');
     artifactTitle.textContent = title;
     artifactChoices.innerHTML = '';
-    const picks = getArtifactChoices();
     picks.forEach((artifact) => {
       const card = document.createElement('article');
       card.className = 'artifact-card';
@@ -801,6 +821,7 @@
       btn.textContent = 'Выбрать';
       btn.addEventListener('click', () => {
         artifact.apply();
+        refreshPlayerStats({ preserveHealth: true, preserveAmmo: true });
         state.pendingArtifact = false;
         state.inArtifact = false;
         artifacts.classList.add('hidden');
@@ -877,6 +898,11 @@
       tab_time: 'Время',
       tab_waves: 'Волны',
       tab_kills: 'Убийства',
+      language_title: 'Язык',
+      lang_ru: 'Русский',
+      lang_ru_desc: 'Русский интерфейс',
+      lang_en: 'English',
+      lang_en_desc: 'Английский интерфейс',
       loading: 'Загрузка...',
       no_data: 'Нет данных',
       btn_back: 'Назад',
@@ -952,6 +978,11 @@
       tab_time: 'Time',
       tab_waves: 'Waves',
       tab_kills: 'Kills',
+      language_title: 'Language',
+      lang_ru: 'Russian',
+      lang_ru_desc: 'Russian interface',
+      lang_en: 'English',
+      lang_en_desc: 'English interface',
       loading: 'Loading...',
       no_data: 'No data',
       btn_back: 'Back',
@@ -1003,8 +1034,11 @@
     return dict[key] || translations.ru[key] || key;
   }
 
-  function applyLanguage(lang) {
+  function applyLanguage(lang, persist = true) {
     currentLang = (lang === 'en' || lang === 'ru') ? lang : 'ru';
+    if (persist) {
+      localStorage.setItem('arena_lang', currentLang);
+    }
     document.documentElement.lang = currentLang;
     document.title = t('title');
     document.querySelectorAll('[data-i18n]').forEach((el) => {
@@ -1012,10 +1046,24 @@
       if (!key) return;
       el.textContent = t(key);
     });
+    if (languageChoices) {
+      languageChoices.querySelectorAll('[data-lang-choice]').forEach((button) => {
+        button.classList.toggle('active', button.getAttribute('data-lang-choice') === currentLang);
+      });
+    }
     updateSoundButtons();
     updateFullscreenButton();
     localizeUpgradesAndArtifacts();
     renderUpgradeGuide();
+  }
+
+  function loadLanguageSettings() {
+    const raw = localStorage.getItem('arena_lang');
+    if (raw === 'ru' || raw === 'en') {
+      currentLang = raw;
+      return true;
+    }
+    return false;
   }
 
   function updateSoundButtons() {
@@ -1420,8 +1468,11 @@
       if (ysdk?.features?.LoadingAPI?.ready) {
         ysdk.features.LoadingAPI.ready();
       }
-      currentLang = ysdk?.environment?.i18n?.lang || 'ru';
-      applyLanguage(currentLang);
+      const hasSavedLanguage = loadLanguageSettings();
+      if (!hasSavedLanguage) {
+        currentLang = ysdk?.environment?.i18n?.lang === 'en' ? 'en' : 'ru';
+      }
+      applyLanguage(currentLang, false);
       if (ysdk?.on) {
         ysdk.on('game_api_pause', () => {
           if (state.running && !state.gameOver) setPaused(true);
@@ -2606,7 +2657,6 @@
     reloadIndicator.classList.add('hidden');
     submitScores();
     refreshLeaderboard();
-    showInterstitial();
   }
 
   function render() {
@@ -3366,6 +3416,17 @@
       });
     }
 
+    if (languageChoices) {
+      languageChoices.querySelectorAll('[data-lang-choice]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const lang = button.getAttribute('data-lang-choice');
+          if (!lang) return;
+          playSound('click');
+          applyLanguage(lang, true);
+        });
+      });
+    }
+
     btnShopContinue.addEventListener('click', () => {
       playSound('click');
       closeShop();
@@ -3380,6 +3441,7 @@
 
     btnRestart.addEventListener('click', () => {
       playSound('click');
+      showInterstitial();
       death.classList.add('hidden');
       artifacts.classList.add('hidden');
       hud.classList.remove('hidden');
@@ -3388,6 +3450,7 @@
 
     btnMenu.addEventListener('click', () => {
       playSound('click');
+      showInterstitial();
       refreshLeaderboard();
       death.classList.add('hidden');
       hud.classList.add('hidden');
@@ -4084,8 +4147,9 @@
     resize();
     createSprites();
     readRecord();
+    loadLanguageSettings();
     loadSoundSettings();
-    applyLanguage(currentLang);
+    applyLanguage(currentLang, false);
     initSDK();
     renderUpgradeGuide();
     bindControls();
