@@ -185,10 +185,6 @@ body { overflow: hidden; }
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.language-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .choice-card {
   display: flex;
   flex-direction: column;
@@ -551,4 +547,89 @@ h1, h2 { margin: 0 0 16px 0; font-weight: 700; }
   background: rgba(255,255,255,0.06);
   border: 1px dashed rgba(255,255,255,0.18);
   font-size: 12px;
+}
+
+/* === FULL REDESIGN: MUTED STEEL PIXEL === */
+:root {
+  --bg: #0f1218;
+  --panel: #171c25;
+  --text: #e6ebf4;
+  --muted: #8f9caf;
+  --accent: #bfc9d9;
+  --accent-2: #7f8fa8;
+  --danger: #c87979;
+}
+
+html, body {
+  background:
+    radial-gradient(circle at 18% 15%, rgba(184, 195, 214, 0.06), transparent 34%),
+    radial-gradient(circle at 82% 8%, rgba(132, 144, 164, 0.06), transparent 34%),
+    linear-gradient(180deg, #0c0f15 0%, #141922 100%);
+}
+
+#game {
+  background:
+    linear-gradient(180deg, #121722 0%, #171d29 100%);
+  image-rendering: pixelated;
+  filter: contrast(1.08) saturate(0.9) brightness(0.98);
+}
+
+.screen {
+  background:
+    linear-gradient(180deg, rgba(7, 10, 16, 0.82), rgba(10, 14, 22, 0.9));
+  backdrop-filter: blur(5px);
+}
+
+.panel {
+  border-radius: 10px;
+  border: 1px solid rgba(130, 144, 170, 0.22);
+  background:
+    linear-gradient(180deg, #1d2430 0%, #161c27 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.03),
+    0 22px 40px rgba(0,0,0,0.45);
+}
+
+.panel h1, .panel h2 {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hud-item {
+  border: 1px solid rgba(124, 137, 159, 0.22);
+  background: linear-gradient(180deg, rgba(29, 36, 48, 0.92), rgba(22, 28, 39, 0.92));
+}
+
+.btn {
+  border-radius: 8px;
+  border: 1px solid rgba(141, 152, 172, 0.24);
+  background: linear-gradient(180deg, #313a4a 0%, #252d3b 100%);
+  color: #e4e8f0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.btn:hover {
+  filter: brightness(1.08);
+}
+
+.btn.primary {
+  border-color: rgba(176, 187, 205, 0.35);
+  background: linear-gradient(180deg, #d1d9e6 0%, #a9b5c8 100%);
+  color: #1b1f27;
+}
+
+.choice-card {
+  border: 1px solid rgba(124, 138, 164, 0.24);
+  background: linear-gradient(180deg, #273143 0%, #1f2736 100%);
+}
+
+.choice-card.active {
+  border-color: rgba(176, 196, 225, 0.56);
+  box-shadow: 0 0 0 1px rgba(176, 196, 225, 0.26) inset;
+}
+
+.shop-card, .artifact-card, .upgrade-guide-card {
+  border: 1px solid rgba(120, 132, 155, 0.22);
+  background: linear-gradient(180deg, #242d3d 0%, #1d2533 100%);
 }

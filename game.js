@@ -45,7 +45,6 @@
   const btnSound = document.getElementById('btnSound');
   const btnSoundPause = document.getElementById('btnSoundPause');
   const btnFullscreen = document.getElementById('btnFullscreen');
-  const languageChoices = document.getElementById('languageChoices');
   const arenaChoices = document.getElementById('arenaChoices');
   const weaponChoices = document.getElementById('weaponChoices');
 
@@ -525,60 +524,48 @@
     {
       id: 'blood_bolt',
       name: 'Кровавый затвор',
-      nameRu: 'Кровавый затвор',
       nameEn: 'Blood Bolt',
       desc: 'Чем меньше здоровья, тем быстрее стрельба. На низком HP почти вдвое быстрее.',
-      descRu: 'Чем меньше здоровья, тем быстрее стрельба. На низком HP почти вдвое быстрее.',
       descEn: 'Lower health means faster fire rate. At low HP it is almost doubled.',
       apply: () => { state.artifacts.push('blood_bolt'); },
     },
     {
       id: 'vulture_heart',
       name: 'Сердце стервятника',
-      nameRu: 'Сердце стервятника',
       nameEn: 'Vulture Heart',
       desc: 'Каждое убийство лечит: обычный враг +3 HP, элита +6 HP, босс +20 HP.',
-      descRu: 'Каждое убийство лечит: обычный враг +3 HP, элита +6 HP, босс +20 HP.',
       descEn: 'Each kill heals: normal +3 HP, elite +6 HP, boss +20 HP.',
       apply: () => { state.artifacts.push('vulture_heart'); },
     },
     {
       id: 'storm_trace',
       name: 'Грозовой след',
-      nameRu: 'Грозовой след',
       nameEn: 'Storm Trace',
       desc: 'Каждая пятая атака вызывает цепную молнию, бьющую по 3 целям.',
-      descRu: 'Каждая пятая атака вызывает цепную молнию, бьющую по 3 целям.',
       descEn: 'Every fifth attack triggers chain lightning hitting 3 targets.',
       apply: () => { state.artifacts.push('storm_trace'); },
     },
     {
       id: 'magnet_seal',
       name: 'Магнитная печать',
-      nameRu: 'Магнитная печать',
       nameEn: 'Magnet Seal',
       desc: 'Сильнее тянет монеты. Подбор монеты даёт +15% скорости на 1,5 секунды.',
-      descRu: 'Сильнее тянет монеты. Подбор монеты даёт +15% скорости на 1,5 секунды.',
       descEn: 'Stronger coin pull. Picking a coin gives +15% speed for 1.5s.',
       apply: () => { state.artifacts.push('magnet_seal'); },
     },
     {
       id: 'shop_echo',
       name: 'Эхо магазина',
-      nameRu: 'Эхо магазина',
       nameEn: 'Shop Echo',
       desc: 'После перезарядки первый выстрел наносит на 60% больше урона.',
-      descRu: 'После перезарядки первый выстрел наносит на 60% больше урона.',
       descEn: 'After reloading, the first shot deals 60% more damage.',
       apply: () => { state.artifacts.push('shop_echo'); },
     },
     {
       id: 'gold_vein',
       name: 'Золотая жилка',
-      nameRu: 'Золотая жилка',
       nameEn: 'Gold Vein',
       desc: 'При подборе монеты есть 20% шанс получить ещё +1 сверху.',
-      descRu: 'При подборе монеты есть 20% шанс получить ещё +1 сверху.',
       descEn: 'Picking a coin has a 20% chance to grant +1 extra.',
       apply: () => { state.artifacts.push('gold_vein'); },
     },
@@ -755,8 +742,8 @@
         artifact.name = artifact.nameEn || artifact.name;
         artifact.desc = artifact.descEn || artifact.desc;
       } else {
-        artifact.name = artifact.nameRu || artifact.name;
-        artifact.desc = artifact.descRu || artifact.desc;
+        artifact.name = artifact.name;
+        artifact.desc = artifact.desc;
       }
     });
   }
@@ -787,7 +774,7 @@
 
   function getArtifactChoices() {
     const available = artifactCatalog.filter((artifact) => !hasArtifact(artifact.id));
-    const pool = [...available];
+    const pool = available.length >= 3 ? [...available] : [...artifactCatalog];
     const picks = [];
     while (picks.length < Math.min(3, pool.length)) {
       const idx = Math.floor(Math.random() * pool.length);
@@ -797,18 +784,11 @@
   }
 
   function openArtifactChoice(title = 'Выбор артефакта') {
-    const picks = getArtifactChoices();
-    if (!picks.length) {
-      state.pendingArtifact = false;
-      state.inArtifact = false;
-      artifacts.classList.add('hidden');
-      openShop();
-      return;
-    }
     state.inArtifact = true;
     artifacts.classList.remove('hidden');
     artifactTitle.textContent = title;
     artifactChoices.innerHTML = '';
+    const picks = getArtifactChoices();
     picks.forEach((artifact) => {
       const card = document.createElement('article');
       card.className = 'artifact-card';
@@ -821,7 +801,6 @@
       btn.textContent = 'Выбрать';
       btn.addEventListener('click', () => {
         artifact.apply();
-        refreshPlayerStats({ preserveHealth: true, preserveAmmo: true });
         state.pendingArtifact = false;
         state.inArtifact = false;
         artifacts.classList.add('hidden');
@@ -898,11 +877,6 @@
       tab_time: 'Время',
       tab_waves: 'Волны',
       tab_kills: 'Убийства',
-      language_title: 'Язык',
-      lang_ru: 'Русский',
-      lang_ru_desc: 'Русский интерфейс',
-      lang_en: 'English',
-      lang_en_desc: 'Английский интерфейс',
       loading: 'Загрузка...',
       no_data: 'Нет данных',
       btn_back: 'Назад',
@@ -978,11 +952,6 @@
       tab_time: 'Time',
       tab_waves: 'Waves',
       tab_kills: 'Kills',
-      language_title: 'Language',
-      lang_ru: 'Russian',
-      lang_ru_desc: 'Russian interface',
-      lang_en: 'English',
-      lang_en_desc: 'English interface',
       loading: 'Loading...',
       no_data: 'No data',
       btn_back: 'Back',
@@ -1034,11 +1003,8 @@
     return dict[key] || translations.ru[key] || key;
   }
 
-  function applyLanguage(lang, persist = true) {
+  function applyLanguage(lang) {
     currentLang = (lang === 'en' || lang === 'ru') ? lang : 'ru';
-    if (persist) {
-      localStorage.setItem('arena_lang', currentLang);
-    }
     document.documentElement.lang = currentLang;
     document.title = t('title');
     document.querySelectorAll('[data-i18n]').forEach((el) => {
@@ -1046,24 +1012,10 @@
       if (!key) return;
       el.textContent = t(key);
     });
-    if (languageChoices) {
-      languageChoices.querySelectorAll('[data-lang-choice]').forEach((button) => {
-        button.classList.toggle('active', button.getAttribute('data-lang-choice') === currentLang);
-      });
-    }
     updateSoundButtons();
     updateFullscreenButton();
     localizeUpgradesAndArtifacts();
     renderUpgradeGuide();
-  }
-
-  function loadLanguageSettings() {
-    const raw = localStorage.getItem('arena_lang');
-    if (raw === 'ru' || raw === 'en') {
-      currentLang = raw;
-      return true;
-    }
-    return false;
   }
 
   function updateSoundButtons() {
@@ -1468,11 +1420,8 @@
       if (ysdk?.features?.LoadingAPI?.ready) {
         ysdk.features.LoadingAPI.ready();
       }
-      const hasSavedLanguage = loadLanguageSettings();
-      if (!hasSavedLanguage) {
-        currentLang = ysdk?.environment?.i18n?.lang === 'en' ? 'en' : 'ru';
-      }
-      applyLanguage(currentLang, false);
+      currentLang = ysdk?.environment?.i18n?.lang || 'ru';
+      applyLanguage(currentLang);
       if (ysdk?.on) {
         ysdk.on('game_api_pause', () => {
           if (state.running && !state.gameOver) setPaused(true);
@@ -2657,6 +2606,7 @@
     reloadIndicator.classList.add('hidden');
     submitScores();
     refreshLeaderboard();
+    showInterstitial();
   }
 
   function render() {
@@ -3416,17 +3366,6 @@
       });
     }
 
-    if (languageChoices) {
-      languageChoices.querySelectorAll('[data-lang-choice]').forEach((button) => {
-        button.addEventListener('click', () => {
-          const lang = button.getAttribute('data-lang-choice');
-          if (!lang) return;
-          playSound('click');
-          applyLanguage(lang, true);
-        });
-      });
-    }
-
     btnShopContinue.addEventListener('click', () => {
       playSound('click');
       closeShop();
@@ -3441,7 +3380,6 @@
 
     btnRestart.addEventListener('click', () => {
       playSound('click');
-      showInterstitial();
       death.classList.add('hidden');
       artifacts.classList.add('hidden');
       hud.classList.remove('hidden');
@@ -3450,7 +3388,6 @@
 
     btnMenu.addEventListener('click', () => {
       playSound('click');
-      showInterstitial();
       refreshLeaderboard();
       death.classList.add('hidden');
       hud.classList.add('hidden');
@@ -4096,60 +4033,216 @@
   }
 
   function createArenaPattern() {
-    const theme = arenaThemes[state.selectedArena] || arenaThemes.crypt;
     const c = document.createElement('canvas');
-    c.width = 32;
-    c.height = 32;
+    c.width = 48;
+    c.height = 48;
     const s = c.getContext('2d');
-    s.fillStyle = theme.bg;
-    s.fillRect(0, 0, 32, 32);
 
-    s.fillStyle = theme.tileA;
-    s.fillRect(0, 0, 16, 16);
-    s.fillRect(16, 16, 16, 16);
+    s.fillStyle = '#12161f';
+    s.fillRect(0, 0, 48, 48);
 
-    s.fillStyle = theme.tileB;
-    s.fillRect(2, 2, 12, 12);
-    s.fillRect(18, 2, 12, 12);
-    s.fillRect(2, 18, 12, 12);
-    s.fillRect(18, 18, 12, 12);
+    s.fillStyle = '#1a2130';
+    for (let y = 0; y < 48; y += 12) {
+      for (let x = (y / 12) % 2 ? 6 : 0; x < 48; x += 12) {
+        s.fillRect(x + 1, y + 1, 10, 10);
+      }
+    }
 
-    s.fillStyle = theme.tileC;
-    s.fillRect(3, 3, 10, 10);
-    s.fillRect(19, 3, 10, 10);
-    s.fillRect(3, 19, 10, 10);
-    s.fillRect(19, 19, 10, 10);
+    s.fillStyle = '#242d3f';
+    for (let y = 0; y < 48; y += 12) {
+      for (let x = (y / 12) % 2 ? 6 : 0; x < 48; x += 12) {
+        s.fillRect(x + 3, y + 3, 6, 6);
+      }
+    }
 
-    s.fillStyle = theme.seam;
-    s.fillRect(14, 0, 4, 32);
-    s.fillRect(0, 14, 32, 4);
+    s.fillStyle = '#2d374c';
+    s.fillRect(0, 11, 48, 2);
+    s.fillRect(0, 23, 48, 2);
+    s.fillRect(0, 35, 48, 2);
 
-    s.fillStyle = theme.crack;
-    s.fillRect(5, 11, 5, 1);
-    s.fillRect(22, 8, 4, 1);
-    s.fillRect(7, 24, 6, 1);
-    s.fillRect(21, 23, 5, 1);
-    s.fillRect(9, 5, 1, 4);
-    s.fillRect(24, 20, 1, 4);
-
-    for (let i = 0; i < 28; i++) {
-      const x = Math.floor(Math.random() * 32);
-      const y = Math.floor(Math.random() * 32);
-      s.fillStyle = Math.random() > 0.55 ? theme.crack : theme.seam;
+    s.fillStyle = '#5e6b86';
+    for (let i = 0; i < 10; i++) {
+      const x = Math.floor(Math.random() * 48);
+      const y = Math.floor(Math.random() * 48);
       s.fillRect(x, y, 1, 1);
     }
 
+    s.fillStyle = 'rgba(176, 188, 209, 0.45)';
+    s.fillRect(5, 5, 3, 1);
+    s.fillRect(17, 17, 3, 1);
+    s.fillRect(29, 29, 3, 1);
+    s.fillRect(41, 41, 3, 1);
+
     return ctx.createPattern(c, 'repeat');
+  }
+
+  function applyFullRedesignSprites() {
+    const cOutline = '#090d14';
+    const cBody = '#55647d';
+    const cBody2 = '#39475d';
+    const cMetal = '#9fb0c7';
+    const cGlow = '#cfd9e8';
+    const cWarm = '#b88a63';
+    const cEnemy1 = '#6d7d91';
+    const cEnemy2 = '#7d6a86';
+    const cEnemy3 = '#5f6f63';
+    const cBoss = '#c7b28a';
+
+    const drawHunter = (s, step) => {
+      s.fillStyle = cOutline; s.fillRect(8, 27, 16, 2);
+      s.fillStyle = '#2a3445'; s.fillRect(9, 6, 14, 17);
+      s.fillStyle = cBody; s.fillRect(10, 7, 12, 6);
+      s.fillStyle = cGlow; s.fillRect(12, 9, 3, 2); s.fillRect(17, 9, 3, 2);
+      s.fillStyle = cBody2; s.fillRect(11, 14, 10, 5);
+      s.fillStyle = cWarm; s.fillRect(12, 19, 8, 3);
+      s.fillStyle = '#4b5567'; s.fillRect(9 + step, 24, 4, 4); s.fillRect(19 - step, 24, 4, 4);
+      s.fillStyle = '#5f4a37'; s.fillRect(23, 14, 4, 9);
+    };
+    sprites.player = createSprite(32, 32, (s) => drawHunter(s, 0));
+    sprites.playerWalk = [
+      createSprite(32, 32, (s) => drawHunter(s, 1)),
+      createSprite(32, 32, (s) => drawHunter(s, -1)),
+    ];
+
+    const drawRifle = (s, base, muzzle) => {
+      s.fillStyle = base; s.fillRect(10, 14, 14, 4);
+      s.fillStyle = '#76859d'; s.fillRect(17, 12, 9, 3);
+      s.fillStyle = muzzle; s.fillRect(25, 13, 2, 1);
+      s.fillStyle = '#6a4d35'; s.fillRect(11, 18, 5, 8);
+    };
+    sprites.carbine = createSprite(32, 32, (s) => drawRifle(s, '#3b475f', '#cfd9e8'));
+    sprites.gun = sprites.carbine;
+    sprites.scatter = createSprite(32, 32, (s) => drawRifle(s, '#51445e', '#d9c3b5'));
+    sprites.lancer = createSprite(32, 32, (s) => drawRifle(s, '#34495f', '#e5edf7'));
+    sprites.storm = createSprite(32, 32, (s) => drawRifle(s, '#463f5d', '#cfd0dd'));
+
+    const drawMireBeast = (s, wobble, bodyA, bodyB) => {
+      s.fillStyle = cOutline; s.fillRect(7, 25, 18, 2);
+      s.fillStyle = bodyA; s.fillRect(6, 13, 20, 11);
+      s.fillStyle = bodyB; s.fillRect(8, 12, 16, 9);
+      s.fillStyle = '#dbe5f4'; s.fillRect(11 + wobble, 15, 3, 2); s.fillRect(18 + wobble, 15, 3, 2);
+      s.fillStyle = '#3f4f60'; s.fillRect(13, 19, 6, 1);
+    };
+    sprites.slime = createSprite(32, 32, (s) => drawMireBeast(s, 0, '#3e5766', '#5f7c8d'));
+    sprites.slimeWalk = [
+      createSprite(32, 32, (s) => drawMireBeast(s, -1, '#3e5766', '#5f7c8d')),
+      createSprite(32, 32, (s) => drawMireBeast(s, 1, '#3e5766', '#5f7c8d')),
+    ];
+
+    const drawWingedWisp = (s, wing, col) => {
+      s.fillStyle = cOutline; s.fillRect(2, 12 + wing, 28, 3);
+      s.fillStyle = '#22293a'; s.fillRect(10, 9, 12, 8);
+      s.fillStyle = col; s.fillRect(12, 11, 8, 4);
+      s.fillStyle = '#eaf1fb'; s.fillRect(13, 12, 2, 2); s.fillRect(17, 12, 2, 2);
+    };
+    sprites.bat = createSprite(32, 32, (s) => drawWingedWisp(s, 0, cEnemy2));
+    sprites.batWalk = [
+      createSprite(32, 32, (s) => drawWingedWisp(s, -2, cEnemy2)),
+      createSprite(32, 32, (s) => drawWingedWisp(s, 2, cEnemy2)),
+    ];
+
+    const drawArcherRaider = (s, tint, step) => {
+      s.fillStyle = cOutline; s.fillRect(9, 25, 14, 2);
+      s.fillStyle = '#2e394c'; s.fillRect(10, 6, 12, 15);
+      s.fillStyle = tint; s.fillRect(12, 8, 8, 4);
+      s.fillStyle = '#8597b1'; s.fillRect(12, 15, 8, 4);
+      s.fillStyle = '#5b6b82'; s.fillRect(13 + step, 22, 2, 4); s.fillRect(17 - step, 22, 2, 4);
+      s.fillStyle = '#6e543c'; s.fillRect(9, 16, 2, 4); s.fillRect(21, 16, 2, 4);
+    };
+    sprites.skeleton = createSprite(32, 32, (s) => drawArcherRaider(s, cEnemy1, 0));
+    sprites.skeletonWalk = [
+      createSprite(32, 32, (s) => drawArcherRaider(s, cEnemy1, 1)),
+      createSprite(32, 32, (s) => drawArcherRaider(s, cEnemy1, -1)),
+    ];
+
+    const drawStoneSentinel = (s, core, leftLeg, rightLeg) => {
+      s.fillStyle = cOutline; s.fillRect(7, 25, 18, 2);
+      s.fillStyle = '#454a54'; s.fillRect(8, 7, 16, 17);
+      s.fillStyle = '#747d8c'; s.fillRect(10, 9, 12, 11);
+      s.fillStyle = core; s.fillRect(14, 13, 4, 4);
+      s.fillStyle = '#2d323a'; s.fillRect(leftLeg, 22, 5, 3); s.fillRect(rightLeg, 22, 5, 3);
+    };
+    sprites.golem = createSprite(32, 32, (s) => drawStoneSentinel(s, cEnemy3, 9, 18));
+    sprites.golemWalk = [
+      createSprite(32, 32, (s) => drawStoneSentinel(s, cEnemy3, 8, 18)),
+      createSprite(32, 32, (s) => drawStoneSentinel(s, cEnemy3, 10, 17)),
+    ];
+
+    const addCrest = (s, col) => {
+      s.fillStyle = col;
+      s.fillRect(10, 4, 12, 2);
+      s.fillRect(11, 3, 2, 2);
+      s.fillRect(19, 3, 2, 2);
+    };
+    sprites.skeletonBoss = createSprite(32, 32, (s) => { drawArcherRaider(s, '#b4c2d6', 0); addCrest(s, cBoss); });
+    sprites.skeletonBossWalk = [
+      createSprite(32, 32, (s) => { drawArcherRaider(s, '#b4c2d6', 1); addCrest(s, cBoss); }),
+      createSprite(32, 32, (s) => { drawArcherRaider(s, '#b4c2d6', -1); addCrest(s, cBoss); }),
+    ];
+    sprites.voidKnightBoss = createSprite(32, 32, (s) => { drawArcherRaider(s, '#a89dbb', 0); addCrest(s, '#bda79a'); s.fillStyle = '#5e4f77'; s.fillRect(9, 6, 2, 10); s.fillRect(21, 6, 2, 10); });
+    sprites.voidKnightBossWalk = [
+      createSprite(32, 32, (s) => { drawArcherRaider(s, '#a89dbb', 1); addCrest(s, '#bda79a'); }),
+      createSprite(32, 32, (s) => { drawArcherRaider(s, '#a89dbb', -1); addCrest(s, '#bda79a'); }),
+    ];
+    sprites.slimeBoss = createSprite(32, 32, (s) => drawMireBeast(s, 0, '#445f72', '#7893a8'));
+    sprites.slimeBossWalk = [
+      createSprite(32, 32, (s) => drawMireBeast(s, -1, '#445f72', '#7893a8')),
+      createSprite(32, 32, (s) => drawMireBeast(s, 1, '#445f72', '#7893a8')),
+    ];
+    sprites.batBoss = createSprite(32, 32, (s) => drawWingedWisp(s, 0, '#6f83a8'));
+    sprites.batBossWalk = [
+      createSprite(32, 32, (s) => drawWingedWisp(s, -2, '#6f83a8')),
+      createSprite(32, 32, (s) => drawWingedWisp(s, 2, '#6f83a8')),
+    ];
+    sprites.golemBoss = createSprite(32, 32, (s) => drawStoneSentinel(s, '#9f8b6a', 8, 18));
+    sprites.golemBossWalk = [
+      createSprite(32, 32, (s) => drawStoneSentinel(s, '#9f8b6a', 8, 18)),
+      createSprite(32, 32, (s) => drawStoneSentinel(s, '#9f8b6a', 10, 17)),
+    ];
+
+    sprites.enemyBow = createSprite(32, 32, (s) => {
+      s.fillStyle = '#6b4e36'; s.fillRect(22, 7, 2, 18);
+      s.fillStyle = '#d8e2f0'; s.fillRect(24, 8, 1, 16);
+      s.fillStyle = '#9fb0c8'; s.fillRect(18, 15, 4, 2);
+    });
+    sprites.arrow = createSprite(32, 32, (s) => {
+      s.fillStyle = '#edf4ff'; s.fillRect(10, 15, 10, 2);
+      s.fillStyle = '#9fb0c8'; s.fillRect(20, 14, 3, 4);
+      s.fillStyle = '#7b5b3e'; s.fillRect(9, 14, 1, 4);
+    });
+    sprites.enemyArrow = createSprite(32, 32, (s) => {
+      s.fillStyle = '#f2e2d2'; s.fillRect(10, 15, 10, 2);
+      s.fillStyle = '#b1947f'; s.fillRect(20, 14, 3, 4);
+      s.fillStyle = '#79573b'; s.fillRect(9, 14, 1, 4);
+    });
+    sprites.pellet = createSprite(32, 32, (s) => {
+      s.fillStyle = '#b99a84'; s.fillRect(13, 13, 4, 4);
+      s.fillStyle = '#f4e8de'; s.fillRect(14, 14, 2, 2);
+    });
+    sprites.lance = createSprite(32, 32, (s) => {
+      s.fillStyle = '#b8c7dc'; s.fillRect(8, 14, 12, 2);
+      s.fillStyle = '#eef4ff'; s.fillRect(20, 13, 5, 4);
+    });
+    sprites.spark = createSprite(32, 32, (s) => {
+      s.fillStyle = '#d0dae8'; s.fillRect(11, 13, 8, 4);
+      s.fillStyle = '#f4f8ff'; s.fillRect(14, 14, 2, 2);
+    });
+    sprites.coin = createSprite(32, 32, (s) => {
+      s.fillStyle = '#646d7c'; s.fillRect(12, 12, 8, 8);
+      s.fillStyle = '#aeb8c8'; s.fillRect(13, 13, 6, 6);
+      s.fillStyle = '#edf3ff'; s.fillRect(14, 14, 2, 2);
+      s.fillStyle = '#d8e0ef'; s.fillRect(15, 16, 2, 1);
+    });
   }
 
   function init() {
     updateViewportUnit();
     resize();
     createSprites();
+    applyFullRedesignSprites();
     readRecord();
-    loadLanguageSettings();
     loadSoundSettings();
-    applyLanguage(currentLang, false);
+    applyLanguage(currentLang);
     initSDK();
     renderUpgradeGuide();
     bindControls();
