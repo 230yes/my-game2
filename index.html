@@ -1,0 +1,205 @@
+﻿<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Стрелок Арены</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="game"></canvas>
+    <div id="damageFlash" class="damage-flash"></div>
+    <div id="waveBanner" class="wave-banner hidden"></div>
+    <div id="bossHud" class="boss-hud hidden">
+      <div class="boss-name" id="bossName" data-i18n="boss_name">Босс</div>
+      <div class="boss-track">
+        <div id="bossBar" class="boss-bar"></div>
+      </div>
+    </div>
+    <div id="reloadIndicator" class="reload-indicator hidden">
+      <div class="reload-label" id="reloadText" data-i18n="reload_label">Перезарядка</div>
+      <div class="reload-track">
+        <div id="reloadBar" class="reload-bar"></div>
+      </div>
+    </div>
+
+    <div id="hud" class="hud hidden">
+      <div class="hud-left">
+        <div class="hud-item"><span data-i18n="hud_health">Здоровье</span><strong id="hudHealth">100</strong></div>
+        <div class="hud-item"><span data-i18n="hud_wave">Волна</span><strong id="hudWave">1</strong></div>
+        <div class="hud-item"><span data-i18n="hud_coins">Монеты</span><strong id="hudCoins">0</strong></div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-item"><span data-i18n="hud_ammo">Патроны</span><strong id="hudAmmo">0/0</strong></div>
+        <div class="hud-item"><span data-i18n="hud_time">Время</span><strong id="hudTime">00:00</strong></div>
+        <div class="hud-item"><span data-i18n="hud_kills">Убийств</span><strong id="hudKills">0</strong></div>
+        <button id="btnPause" class="hud-btn" aria-label="Пауза" data-i18n="btn_pause">Пауза</button>
+      </div>
+    </div>
+
+
+    <div id="start" class="screen">
+      <div class="panel">
+        <h1 data-i18n="title">Стрелок Арены</h1>
+        <p id="startNote" class="record" data-i18n="start_note">Войдите, чтобы сохранять рекорды и показывать имя.</p>
+        <button id="btnEnter" class="btn primary" data-i18n="btn_enter">Войти</button>
+        <button id="btnGuest" class="btn" data-i18n="btn_guest">Играть как гость</button>
+      </div>
+    </div>
+
+    <div id="menu" class="screen hidden">
+      <div class="panel">
+        <h1 data-i18n="title">Стрелок Арены</h1>
+        <div class="record"><span data-i18n="record_label">Рекорд:</span> <span id="menuRecord">00:00</span><span id="menuRecordName" class="record-name"></span></div>
+
+        <div class="choice-group">
+          <div class="choice-title" data-i18n="location_title">Локация</div>
+          <div id="arenaChoices" class="choice-grid">
+            <button class="choice-card active" data-arena="crypt">
+              <strong data-i18n="arena_crypt">Крипта</strong>
+              <span data-i18n="arena_crypt_desc">Монеты тянутся дальше</span>
+            </button>
+            <button class="choice-card" data-arena="forge">
+              <strong data-i18n="arena_forge">Кузня</strong>
+              <span data-i18n="arena_forge_desc">Быстрее стрельба</span>
+            </button>
+            <button class="choice-card" data-arena="citadel">
+              <strong data-i18n="arena_citadel">Цитадель</strong>
+              <span data-i18n="arena_citadel_desc">Больше здоровья</span>
+            </button>
+          </div>
+        </div>
+        <div class="choice-group">
+          <div class="choice-title" data-i18n="weapon_title">Оружие</div>
+          <div id="weaponChoices" class="choice-grid weapon-grid">
+            <button class="choice-card active" data-weapon="carbine">
+              <strong data-i18n="weapon_carbine">Карабин</strong>
+              <span data-i18n="weapon_carbine_desc">Ровный универсал</span>
+            </button>
+            <button class="choice-card" data-weapon="scatter">
+              <strong data-i18n="weapon_scatter">Дробовик</strong>
+              <span data-i18n="weapon_scatter_desc">Ближний разрывной бой</span>
+            </button>
+            <button class="choice-card" data-weapon="lancer">
+              <strong data-i18n="weapon_lancer">Ланцер</strong>
+              <span data-i18n="weapon_lancer_desc">Медленный мощный выстрел</span>
+            </button>
+            <button class="choice-card" data-weapon="storm">
+              <strong data-i18n="weapon_storm">Штормер</strong>
+              <span data-i18n="weapon_storm_desc">Быстрые двойные заряды</span>
+            </button>
+          </div>
+        </div>
+        <button id="btnStart" class="btn primary" data-i18n="btn_start">Начать игру</button>
+        <button id="btnHow" class="btn" data-i18n="btn_how">Как играть</button>
+        <button id="btnUpgrades" class="btn" data-i18n="btn_upgrades">Улучшения</button>
+        <button id="btnLeaderboard" class="btn" data-i18n="btn_leaderboard">Таблица рекордов</button>
+        <button id="btnSound" class="btn" data-i18n="btn_sound_on">Звук: Вкл</button>
+        <button id="btnFullscreen" class="btn" data-i18n="btn_fullscreen">Полный экран</button>
+      </div>
+    </div>
+
+    <div id="leaderboard" class="screen hidden">
+      <div class="panel wide">
+        <h2 data-i18n="leaderboard_title">Таблица рекордов</h2>
+        <div id="leaderboardTabs" class="leaderboard-tabs">
+          <button class="leaderboard-tab active" data-board="time" data-i18n="tab_time">Время</button>
+          <button class="leaderboard-tab" data-board="waves" data-i18n="tab_waves">Волны</button>
+          <button class="leaderboard-tab" data-board="kills" data-i18n="tab_kills">Убийства</button>
+        </div>
+        <div id="leaderboardList" class="leaderboard-list">
+          <div class="leaderboard-row muted" data-i18n="loading">Загрузка...</div>
+        </div>
+        <button id="btnLeaderboardBack" class="btn" data-i18n="btn_back">Назад</button>
+      </div>
+    </div>
+
+    <div id="howto" class="screen hidden">
+      <div class="panel">
+        <h2 data-i18n="howto_title">Как играть</h2>
+        <ul class="list">
+          <li data-i18n="howto_1">Движение: WASD или стрелки, на телефоне левый джойстик.</li>
+          <li data-i18n="howto_2">Стрельба: мышь или правый джойстик на телефоне. Перезарядка: R.</li>
+          <li data-i18n="howto_3">Волны бесконечны. После каждой волны магазин.</li>
+          <li data-i18n="howto_4">Таймер времени не останавливается.</li>
+          <li data-i18n="howto_5">Игра заканчивается только при смерти.</li>
+        </ul>
+        <button id="btnBack" class="btn" data-i18n="btn_back">Назад</button>
+      </div>
+    </div>
+
+    <div id="upgrades" class="screen hidden">
+      <div class="panel wide upgrades-panel">
+        <h2 data-i18n="upgrades_title">Улучшения</h2>
+        <div id="upgradeGuide" class="upgrade-guide"></div>
+        <button id="btnUpgradesBack" class="btn" data-i18n="btn_back">Назад</button>
+      </div>
+    </div>
+
+    <div id="artifacts" class="screen hidden">
+      <div class="panel wide artifacts-panel">
+        <h2 id="artifactTitle" data-i18n="artifacts_title">Артефакт</h2>
+        <div id="artifactChoices" class="artifact-grid"></div>
+      </div>
+    </div>
+
+    <div id="shop" class="screen hidden">
+      <div class="panel wide">
+        <h2 data-i18n="shop_title">Магазин</h2>
+        <div id="shopItems" class="shop-items"></div>
+        <button id="btnReward" class="btn" data-i18n="btn_reward">Реклама: +20 монет</button>
+        <button id="btnShopContinue" class="btn primary" data-i18n="btn_shop_continue">Продолжить</button>
+      </div>
+    </div>
+
+    <div id="pause" class="screen hidden">
+      <div class="panel">
+        <h2 data-i18n="pause_title">Пауза</h2>
+        <p class="record" data-i18n="pause_text">Игра остановлена. Нажми «Продолжить».</p>
+        <button id="btnSoundPause" class="btn" data-i18n="btn_sound_on">Звук: Вкл</button>
+        <button id="btnResume" class="btn primary" data-i18n="btn_resume">Продолжить</button>
+      </div>
+    </div>
+
+
+
+    <div id="death" class="screen hidden">
+      <div class="panel">
+        <h2 data-i18n="death_title">Вы умерли</h2>
+        <div class="death-stats">
+          <div><span data-i18n="death_time_label">Время:</span> <strong id="deathTime">00:00</strong></div>
+          <div><span data-i18n="death_waves_label">Волн пройдено:</span> <strong id="deathWaves">0</strong></div>
+          <div><span data-i18n="death_kills_label">Врагов убито:</span> <strong id="deathKills">0</strong></div>
+          <div><span data-i18n="death_coins_label">Монет собрано:</span> <strong id="deathCoins">0</strong></div>
+          <div><span data-i18n="death_upgrade_label">Лучшее улучшение:</span> <strong id="deathUpgrade">—</strong></div>
+          <div><span data-i18n="death_record_label">Рекорд:</span> <strong id="deathRecord">00:00</strong></div>
+        </div>
+        <div class="death-quote" id="deathQuote"></div>
+        <button id="btnRestart" class="btn primary" data-i18n="btn_restart">Новая игра</button>
+        <button id="btnMenu" class="btn" data-i18n="btn_menu">В меню</button>
+      </div>
+    </div>
+
+    <div id="touch" class="touch hidden">
+      <div id="touchLeft" class="touch-zone"></div>
+      <div id="touchRight" class="touch-zone"></div>
+      <div class="touch-stick touch-stick-left">
+        <div id="moveJoystick" class="joystick">
+          <div id="moveJoystickThumb" class="joystick-thumb"></div>
+        </div>
+      </div>
+      <div class="touch-stick touch-stick-right">
+        <div id="aimJoystick" class="joystick">
+          <div id="aimJoystickThumb" class="joystick-thumb"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/sdk.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
+
+
