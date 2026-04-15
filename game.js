@@ -1226,17 +1226,22 @@
   function showInterstitial() {
     if (!ysdk?.adv?.showFullscreenAdv) return;
     const wasRunning = state.running && !state.gameOver;
+    setSoundPaused(true);
     if (wasRunning) setPaused(true);
+    const resume = () => {
+      if (wasRunning && !document.hidden) setPaused(false);
+      if (!document.hidden) setSoundPaused(false);
+    };
     try {
       ysdk.adv.showFullscreenAdv({
         callbacks: {
-          onClose: () => { if (wasRunning) setPaused(false); },
-          onError: () => { if (wasRunning) setPaused(false); },
-          onOffline: () => { if (wasRunning) setPaused(false); },
+          onClose: resume,
+          onError: resume,
+          onOffline: resume,
         },
       });
     } catch (e) {
-      if (wasRunning) setPaused(false);
+      resume();
       // ignore
     }
   }
@@ -1249,7 +1254,12 @@
       return;
     }
     const wasRunning = state.running && !state.gameOver;
+    setSoundPaused(true);
     if (wasRunning) setPaused(true);
+    const resume = () => {
+      if (wasRunning && !document.hidden) setPaused(false);
+      if (!document.hidden) setSoundPaused(false);
+    };
     try {
       ysdk.adv.showRewardedVideo({
         callbacks: {
@@ -1257,12 +1267,12 @@
             state.coins += rewardCoins;
             hudCoins.textContent = state.coins;
           },
-          onError: () => { if (wasRunning) setPaused(false); },
-          onClose: () => { if (wasRunning) setPaused(false); },
+          onError: resume,
+          onClose: resume,
         },
       });
     } catch (e) {
-      if (wasRunning) setPaused(false);
+      resume();
       // ignore
     }
   }
@@ -1625,8 +1635,8 @@
     state.specialWaveType = chosenSpecial ? chosenSpecial.id : null;
     state.lastWaveWasSpecial = Boolean(chosenSpecial);
     const base = 4;
-    const extra = Math.max(0, state.wave - 5);
-    const baseCount = base + extra + Math.floor(state.wave * 0.8);
+    const extra = Math.max(0, state.wave - 8);
+    const baseCount = base + extra + Math.floor(state.wave * 0.65);
     const count = Math.max(1, Math.round(baseCount * (chosenSpecial ? chosenSpecial.countMult : 1)));
     const eliteTypesUsed = [];
     let elitesSpawned = 0;
@@ -1686,15 +1696,15 @@
 
   function getEliteChance() {
     if (state.wave < 3) return 0;
-    if (state.wave >= 15) return 0.16;
-    if (state.wave >= 8) return 0.12;
-    return 0.08;
+    if (state.wave >= 15) return 0.14;
+    if (state.wave >= 8) return 0.1;
+    return 0.07;
   }
 
   function getEliteMaxPerWave() {
-    if (state.wave >= 14) return 4;
-    if (state.wave >= 8) return 3;
-    return 2;
+    if (state.wave >= 14) return 3;
+    if (state.wave >= 8) return 2;
+    return 1;
   }
 
   function chooseEliteType(currentEliteTypes) {
@@ -1738,16 +1748,16 @@
 
     if (boss) {
       return {
-        speed: 1 + bossProgress * 0.18,
-        health: 1 + bossProgress * 0.8,
-        damage: 1 + bossProgress * 0.36,
+        speed: 1 + bossProgress * 0.14,
+        health: 1 + bossProgress * 0.65,
+        damage: 1 + bossProgress * 0.28,
       };
     }
 
     return {
-      speed: 1 + regularProgress * 0.065,
-      health: 1 + regularProgress * 0.28,
-      damage: 1 + regularProgress * 0.18,
+      speed: 1 + regularProgress * 0.055,
+      health: 1 + regularProgress * 0.24,
+      damage: 1 + regularProgress * 0.145,
     };
   }
 
@@ -1841,11 +1851,11 @@
       const btn = document.createElement('button');
       btn.className = 'btn';
       btn.textContent = t('btn_buy');
-      btn.disabled = !false && state.coins < cost;
+      btn.disabled = state.coins < cost;
       btn.addEventListener('click', () => {
-        if (!false && state.coins < cost) return;
+        if (state.coins < cost) return;
         playSound('click');
-        if (!false) state.coins -= cost;
+        state.coins -= cost;
         opt.apply();
         upgradeLevels[opt.id] = (upgradeLevels[opt.id] || 0) + 1;
         state.bestUpgrade = opt.name;
@@ -1927,7 +1937,7 @@
     const weapon = weaponCatalog[state.selectedWeapon] || weaponCatalog.carbine;
     const now = performance.now();
     let effectiveFireRate = player.fireRate;
-    if (hasArtifact('blood_bolt') && !false) {
+    if (hasArtifact('blood_bolt')) {
       const missingRatio = clamp(1 - player.health / player.maxHealth, 0, 0.9);
       effectiveFireRate *= 1 + missingRatio;
     }
@@ -1959,7 +1969,7 @@
       const lane = totalShots > 1 ? (i - (totalShots - 1) / 2) : 0;
       const offset = lane * spread;
       const lateralOffset = extraShots > 0 && weapon.shots === 1 ? lane * 6 : 0;
-      let shotDamage = false ? 9999 : player.damage;
+      let shotDamage = player.damage;
       if (hasArtifact('shop_echo') && artifactRuntime.echoLoaded) {
         shotDamage *= 1.6;
       }
@@ -2172,7 +2182,7 @@
     if (e.eliteType === 'explosive' || e.kamikaze) {
       const blastDamage = Math.round(18 + state.wave * 0.35);
       spawnParticles(e.x, e.y, '#ff8787', 12, 120, 0.28, 3.4);
-      if (!false && dist(e.x, e.y, player.x, player.y) <= 42 && player.invuln <= 0) {
+      if (dist(e.x, e.y, player.x, player.y) <= 42 && player.invuln <= 0) {
         player.health -= blastDamage;
         player.invuln = 0.5;
         flashDamage(0.65);
@@ -2216,7 +2226,7 @@
         puddles.splice(i, 1);
         continue;
       }
-      if (!false && dist(puddle.x, puddle.y, player.x, player.y) <= puddle.radius + player.r && puddle.tickTimer <= 0) {
+      if (dist(puddle.x, puddle.y, player.x, player.y) <= puddle.radius + player.r && puddle.tickTimer <= 0) {
         puddle.tickTimer = 0.5;
         player.health -= 4;
         flashDamage(0.35);
@@ -2313,7 +2323,7 @@
       e.y = clamp(e.y, e.r, worldHeight - e.r);
 
       if (dist(e.x, e.y, player.x, player.y) < e.r + player.r) {
-        if (false) continue;
+        
         if (player.invuln <= 0) {
           player.health -= e.contactDamage;
           player.invuln = 0.5;
@@ -2549,7 +2559,7 @@
 
       if (dist(projectile.x, projectile.y, player.x, player.y) <= player.r + projectile.r) {
         enemyProjectiles.splice(i, 1);
-        if (false || player.invuln > 0) continue;
+        if (player.invuln > 0) continue;
         player.health -= projectile.damage;
         playSound('hit');
         player.invuln = 0.5;
@@ -4033,213 +4043,56 @@
   }
 
   function createArenaPattern() {
+    const theme = arenaThemes[state.selectedArena] || arenaThemes.crypt;
     const c = document.createElement('canvas');
-    c.width = 48;
-    c.height = 48;
+    c.width = 32;
+    c.height = 32;
     const s = c.getContext('2d');
+    s.fillStyle = theme.bg;
+    s.fillRect(0, 0, 32, 32);
 
-    s.fillStyle = '#12161f';
-    s.fillRect(0, 0, 48, 48);
+    s.fillStyle = theme.tileA;
+    s.fillRect(0, 0, 16, 16);
+    s.fillRect(16, 16, 16, 16);
 
-    s.fillStyle = '#1a2130';
-    for (let y = 0; y < 48; y += 12) {
-      for (let x = (y / 12) % 2 ? 6 : 0; x < 48; x += 12) {
-        s.fillRect(x + 1, y + 1, 10, 10);
-      }
-    }
+    s.fillStyle = theme.tileB;
+    s.fillRect(2, 2, 12, 12);
+    s.fillRect(18, 2, 12, 12);
+    s.fillRect(2, 18, 12, 12);
+    s.fillRect(18, 18, 12, 12);
 
-    s.fillStyle = '#242d3f';
-    for (let y = 0; y < 48; y += 12) {
-      for (let x = (y / 12) % 2 ? 6 : 0; x < 48; x += 12) {
-        s.fillRect(x + 3, y + 3, 6, 6);
-      }
-    }
+    s.fillStyle = theme.tileC;
+    s.fillRect(3, 3, 10, 10);
+    s.fillRect(19, 3, 10, 10);
+    s.fillRect(3, 19, 10, 10);
+    s.fillRect(19, 19, 10, 10);
 
-    s.fillStyle = '#2d374c';
-    s.fillRect(0, 11, 48, 2);
-    s.fillRect(0, 23, 48, 2);
-    s.fillRect(0, 35, 48, 2);
+    s.fillStyle = theme.seam;
+    s.fillRect(14, 0, 4, 32);
+    s.fillRect(0, 14, 32, 4);
 
-    s.fillStyle = '#5e6b86';
-    for (let i = 0; i < 10; i++) {
-      const x = Math.floor(Math.random() * 48);
-      const y = Math.floor(Math.random() * 48);
+    s.fillStyle = theme.crack;
+    s.fillRect(5, 11, 5, 1);
+    s.fillRect(22, 8, 4, 1);
+    s.fillRect(7, 24, 6, 1);
+    s.fillRect(21, 23, 5, 1);
+    s.fillRect(9, 5, 1, 4);
+    s.fillRect(24, 20, 1, 4);
+
+    for (let i = 0; i < 28; i++) {
+      const x = Math.floor(Math.random() * 32);
+      const y = Math.floor(Math.random() * 32);
+      s.fillStyle = Math.random() > 0.55 ? theme.crack : theme.seam;
       s.fillRect(x, y, 1, 1);
     }
 
-    s.fillStyle = 'rgba(176, 188, 209, 0.45)';
-    s.fillRect(5, 5, 3, 1);
-    s.fillRect(17, 17, 3, 1);
-    s.fillRect(29, 29, 3, 1);
-    s.fillRect(41, 41, 3, 1);
-
     return ctx.createPattern(c, 'repeat');
-  }
-
-  function applyFullRedesignSprites() {
-    const cOutline = '#090d14';
-    const cBody = '#55647d';
-    const cBody2 = '#39475d';
-    const cMetal = '#9fb0c7';
-    const cGlow = '#cfd9e8';
-    const cWarm = '#b88a63';
-    const cEnemy1 = '#6d7d91';
-    const cEnemy2 = '#7d6a86';
-    const cEnemy3 = '#5f6f63';
-    const cBoss = '#c7b28a';
-
-    const drawHunter = (s, step) => {
-      s.fillStyle = cOutline; s.fillRect(8, 27, 16, 2);
-      s.fillStyle = '#2a3445'; s.fillRect(9, 6, 14, 17);
-      s.fillStyle = cBody; s.fillRect(10, 7, 12, 6);
-      s.fillStyle = cGlow; s.fillRect(12, 9, 3, 2); s.fillRect(17, 9, 3, 2);
-      s.fillStyle = cBody2; s.fillRect(11, 14, 10, 5);
-      s.fillStyle = cWarm; s.fillRect(12, 19, 8, 3);
-      s.fillStyle = '#4b5567'; s.fillRect(9 + step, 24, 4, 4); s.fillRect(19 - step, 24, 4, 4);
-      s.fillStyle = '#5f4a37'; s.fillRect(23, 14, 4, 9);
-    };
-    sprites.player = createSprite(32, 32, (s) => drawHunter(s, 0));
-    sprites.playerWalk = [
-      createSprite(32, 32, (s) => drawHunter(s, 1)),
-      createSprite(32, 32, (s) => drawHunter(s, -1)),
-    ];
-
-    const drawRifle = (s, base, muzzle) => {
-      s.fillStyle = base; s.fillRect(10, 14, 14, 4);
-      s.fillStyle = '#76859d'; s.fillRect(17, 12, 9, 3);
-      s.fillStyle = muzzle; s.fillRect(25, 13, 2, 1);
-      s.fillStyle = '#6a4d35'; s.fillRect(11, 18, 5, 8);
-    };
-    sprites.carbine = createSprite(32, 32, (s) => drawRifle(s, '#3b475f', '#cfd9e8'));
-    sprites.gun = sprites.carbine;
-    sprites.scatter = createSprite(32, 32, (s) => drawRifle(s, '#51445e', '#d9c3b5'));
-    sprites.lancer = createSprite(32, 32, (s) => drawRifle(s, '#34495f', '#e5edf7'));
-    sprites.storm = createSprite(32, 32, (s) => drawRifle(s, '#463f5d', '#cfd0dd'));
-
-    const drawMireBeast = (s, wobble, bodyA, bodyB) => {
-      s.fillStyle = cOutline; s.fillRect(7, 25, 18, 2);
-      s.fillStyle = bodyA; s.fillRect(6, 13, 20, 11);
-      s.fillStyle = bodyB; s.fillRect(8, 12, 16, 9);
-      s.fillStyle = '#dbe5f4'; s.fillRect(11 + wobble, 15, 3, 2); s.fillRect(18 + wobble, 15, 3, 2);
-      s.fillStyle = '#3f4f60'; s.fillRect(13, 19, 6, 1);
-    };
-    sprites.slime = createSprite(32, 32, (s) => drawMireBeast(s, 0, '#3e5766', '#5f7c8d'));
-    sprites.slimeWalk = [
-      createSprite(32, 32, (s) => drawMireBeast(s, -1, '#3e5766', '#5f7c8d')),
-      createSprite(32, 32, (s) => drawMireBeast(s, 1, '#3e5766', '#5f7c8d')),
-    ];
-
-    const drawWingedWisp = (s, wing, col) => {
-      s.fillStyle = cOutline; s.fillRect(2, 12 + wing, 28, 3);
-      s.fillStyle = '#22293a'; s.fillRect(10, 9, 12, 8);
-      s.fillStyle = col; s.fillRect(12, 11, 8, 4);
-      s.fillStyle = '#eaf1fb'; s.fillRect(13, 12, 2, 2); s.fillRect(17, 12, 2, 2);
-    };
-    sprites.bat = createSprite(32, 32, (s) => drawWingedWisp(s, 0, cEnemy2));
-    sprites.batWalk = [
-      createSprite(32, 32, (s) => drawWingedWisp(s, -2, cEnemy2)),
-      createSprite(32, 32, (s) => drawWingedWisp(s, 2, cEnemy2)),
-    ];
-
-    const drawArcherRaider = (s, tint, step) => {
-      s.fillStyle = cOutline; s.fillRect(9, 25, 14, 2);
-      s.fillStyle = '#2e394c'; s.fillRect(10, 6, 12, 15);
-      s.fillStyle = tint; s.fillRect(12, 8, 8, 4);
-      s.fillStyle = '#8597b1'; s.fillRect(12, 15, 8, 4);
-      s.fillStyle = '#5b6b82'; s.fillRect(13 + step, 22, 2, 4); s.fillRect(17 - step, 22, 2, 4);
-      s.fillStyle = '#6e543c'; s.fillRect(9, 16, 2, 4); s.fillRect(21, 16, 2, 4);
-    };
-    sprites.skeleton = createSprite(32, 32, (s) => drawArcherRaider(s, cEnemy1, 0));
-    sprites.skeletonWalk = [
-      createSprite(32, 32, (s) => drawArcherRaider(s, cEnemy1, 1)),
-      createSprite(32, 32, (s) => drawArcherRaider(s, cEnemy1, -1)),
-    ];
-
-    const drawStoneSentinel = (s, core, leftLeg, rightLeg) => {
-      s.fillStyle = cOutline; s.fillRect(7, 25, 18, 2);
-      s.fillStyle = '#454a54'; s.fillRect(8, 7, 16, 17);
-      s.fillStyle = '#747d8c'; s.fillRect(10, 9, 12, 11);
-      s.fillStyle = core; s.fillRect(14, 13, 4, 4);
-      s.fillStyle = '#2d323a'; s.fillRect(leftLeg, 22, 5, 3); s.fillRect(rightLeg, 22, 5, 3);
-    };
-    sprites.golem = createSprite(32, 32, (s) => drawStoneSentinel(s, cEnemy3, 9, 18));
-    sprites.golemWalk = [
-      createSprite(32, 32, (s) => drawStoneSentinel(s, cEnemy3, 8, 18)),
-      createSprite(32, 32, (s) => drawStoneSentinel(s, cEnemy3, 10, 17)),
-    ];
-
-    const addCrest = (s, col) => {
-      s.fillStyle = col;
-      s.fillRect(10, 4, 12, 2);
-      s.fillRect(11, 3, 2, 2);
-      s.fillRect(19, 3, 2, 2);
-    };
-    sprites.skeletonBoss = createSprite(32, 32, (s) => { drawArcherRaider(s, '#b4c2d6', 0); addCrest(s, cBoss); });
-    sprites.skeletonBossWalk = [
-      createSprite(32, 32, (s) => { drawArcherRaider(s, '#b4c2d6', 1); addCrest(s, cBoss); }),
-      createSprite(32, 32, (s) => { drawArcherRaider(s, '#b4c2d6', -1); addCrest(s, cBoss); }),
-    ];
-    sprites.voidKnightBoss = createSprite(32, 32, (s) => { drawArcherRaider(s, '#a89dbb', 0); addCrest(s, '#bda79a'); s.fillStyle = '#5e4f77'; s.fillRect(9, 6, 2, 10); s.fillRect(21, 6, 2, 10); });
-    sprites.voidKnightBossWalk = [
-      createSprite(32, 32, (s) => { drawArcherRaider(s, '#a89dbb', 1); addCrest(s, '#bda79a'); }),
-      createSprite(32, 32, (s) => { drawArcherRaider(s, '#a89dbb', -1); addCrest(s, '#bda79a'); }),
-    ];
-    sprites.slimeBoss = createSprite(32, 32, (s) => drawMireBeast(s, 0, '#445f72', '#7893a8'));
-    sprites.slimeBossWalk = [
-      createSprite(32, 32, (s) => drawMireBeast(s, -1, '#445f72', '#7893a8')),
-      createSprite(32, 32, (s) => drawMireBeast(s, 1, '#445f72', '#7893a8')),
-    ];
-    sprites.batBoss = createSprite(32, 32, (s) => drawWingedWisp(s, 0, '#6f83a8'));
-    sprites.batBossWalk = [
-      createSprite(32, 32, (s) => drawWingedWisp(s, -2, '#6f83a8')),
-      createSprite(32, 32, (s) => drawWingedWisp(s, 2, '#6f83a8')),
-    ];
-    sprites.golemBoss = createSprite(32, 32, (s) => drawStoneSentinel(s, '#9f8b6a', 8, 18));
-    sprites.golemBossWalk = [
-      createSprite(32, 32, (s) => drawStoneSentinel(s, '#9f8b6a', 8, 18)),
-      createSprite(32, 32, (s) => drawStoneSentinel(s, '#9f8b6a', 10, 17)),
-    ];
-
-    sprites.enemyBow = createSprite(32, 32, (s) => {
-      s.fillStyle = '#6b4e36'; s.fillRect(22, 7, 2, 18);
-      s.fillStyle = '#d8e2f0'; s.fillRect(24, 8, 1, 16);
-      s.fillStyle = '#9fb0c8'; s.fillRect(18, 15, 4, 2);
-    });
-    sprites.arrow = createSprite(32, 32, (s) => {
-      s.fillStyle = '#edf4ff'; s.fillRect(10, 15, 10, 2);
-      s.fillStyle = '#9fb0c8'; s.fillRect(20, 14, 3, 4);
-      s.fillStyle = '#7b5b3e'; s.fillRect(9, 14, 1, 4);
-    });
-    sprites.enemyArrow = createSprite(32, 32, (s) => {
-      s.fillStyle = '#f2e2d2'; s.fillRect(10, 15, 10, 2);
-      s.fillStyle = '#b1947f'; s.fillRect(20, 14, 3, 4);
-      s.fillStyle = '#79573b'; s.fillRect(9, 14, 1, 4);
-    });
-    sprites.pellet = createSprite(32, 32, (s) => {
-      s.fillStyle = '#b99a84'; s.fillRect(13, 13, 4, 4);
-      s.fillStyle = '#f4e8de'; s.fillRect(14, 14, 2, 2);
-    });
-    sprites.lance = createSprite(32, 32, (s) => {
-      s.fillStyle = '#b8c7dc'; s.fillRect(8, 14, 12, 2);
-      s.fillStyle = '#eef4ff'; s.fillRect(20, 13, 5, 4);
-    });
-    sprites.spark = createSprite(32, 32, (s) => {
-      s.fillStyle = '#d0dae8'; s.fillRect(11, 13, 8, 4);
-      s.fillStyle = '#f4f8ff'; s.fillRect(14, 14, 2, 2);
-    });
-    sprites.coin = createSprite(32, 32, (s) => {
-      s.fillStyle = '#646d7c'; s.fillRect(12, 12, 8, 8);
-      s.fillStyle = '#aeb8c8'; s.fillRect(13, 13, 6, 6);
-      s.fillStyle = '#edf3ff'; s.fillRect(14, 14, 2, 2);
-      s.fillStyle = '#d8e0ef'; s.fillRect(15, 16, 2, 1);
-    });
   }
 
   function init() {
     updateViewportUnit();
     resize();
     createSprites();
-    applyFullRedesignSprites();
     readRecord();
     loadSoundSettings();
     applyLanguage(currentLang);
@@ -4280,6 +4133,9 @@
 
   init();
 })();
+
+
+
 
 
 
